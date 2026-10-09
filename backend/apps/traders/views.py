@@ -41,6 +41,12 @@ class TraderViewSet(viewsets.ModelViewSet):
             classes = [IsTraderReadAllowed]
         return [cls() for cls in classes]
 
+    def create(self, request, *args, **kwargs):
+        return Response(
+            {'detail': 'Use the legal or informal registration endpoint to create a complete trader record.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     def get_queryset(self):
         qs = Trader.objects.select_related(
             'woreda', 'woreda__region', 'kebele', 'created_by', 'verified_by', 'assigned_director',
