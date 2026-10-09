@@ -30,6 +30,6 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
                 woreda_id=user.assigned_woreda_id
             ).values_list('trader_id', flat=True)
             queryset = queryset.filter(
-                Q(trader_id__in=allowed_trader_ids) | Q(user=user.username)
+                Q(trader_id__in=allowed_trader_ids) | (Q(user=user.username) & (Q(trader_id__isnull=True) | Q(trader_id='')))
             )
         return queryset
