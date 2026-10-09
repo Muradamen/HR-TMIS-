@@ -117,6 +117,21 @@ class TraderViewSet(viewsets.ModelViewSet):
         next_num = (last_trader.id + 1) if last_trader else 1
         return f"HTT-{next_num:06d}"
 
+    def _location_scope_error(self, request, woreda, kebele):
+        if not woreda.is_active or not kebele.is_active:
+            return Response({'detail': 'Inactive Woreda or Kebele cannot be selected.', 'code': 'INACTIVE_LOCATION'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if request.user.assigned_woreda_id and woreda.id != request.user.assigned_woreda_id:
+            return Response({'detail': 'Selected Woreda is outside your assigned territory.', 'code': 'WOREDA_FORBIDDEN'},
+                            status=status.HTTP_403_FORBIDDEN)
+        if kebele.woreda_id != woreda.id:
+            return Response(
+                {'detail': 'Invalid Woreda/Kebele combination: the selected Kebele does not belong to the selected Woreda.',
+                 'code': 'INVALID_WOREDA_KEBELE_COMBINATION'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return None
+
     @action(detail=False, methods=['post'], url_path='legal')
     def register_legal(self, request):
         data = request.data
@@ -129,11 +144,9 @@ class TraderViewSet(viewsets.ModelViewSet):
         except (Woreda.DoesNotExist, Kebele.DoesNotExist):
             return Response({'detail': 'Invalid Woreda or Kebele ID.', 'code': 'INVALID_LOCATION'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if kebele.woreda_id != woreda.id:
-            return Response(
-                {'detail': 'Invalid Woreda/Kebele combination: the selected Kebele does not belong to the selected Woreda.', 'code': 'INVALID_WOREDA_KEBELE_COMBINATION'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        location_error = self._location_scope_error(request, woreda, kebele)
+        if location_error:
+            return location_error
 
         tin = data.get('tin', '').strip()
         trade_reg = data.get('tradeRegistrationNumber', '').strip()
@@ -198,11 +211,9 @@ class TraderViewSet(viewsets.ModelViewSet):
         except (Woreda.DoesNotExist, Kebele.DoesNotExist):
             return Response({'detail': 'Invalid Woreda or Kebele ID.', 'code': 'INVALID_LOCATION'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if kebele.woreda_id != woreda.id:
-            return Response(
-                {'detail': 'Invalid Woreda/Kebele combination: the selected Kebele does not belong to the selected Woreda.', 'code': 'INVALID_WOREDA_KEBELE_COMBINATION'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        location_error = self._location_scope_error(request, woreda, kebele)
+        if location_error:
+            return location_error
 
         capital = Decimal(str(data.get('estimatedCapitalAssets', 0)))
         target_status = data.get('status', 'SUBMITTED')
