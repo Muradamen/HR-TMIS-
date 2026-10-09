@@ -11,7 +11,7 @@ from .models import Trader, LegalTrader, InformalTrader
 from .serializers import TraderSerializer
 from apps.locations.models import Woreda, Kebele
 from apps.audit.models import AuditLog
-from apps.core.permissions import IsDataEncoder, IsAdministrator
+from apps.core.permissions import IsDataEncoder, IsAdministrator, IsDirector, IsAgencyLeader, IsTraderReadAllowed
 
 class TraderViewSet(viewsets.ModelViewSet):
     queryset = Trader.objects.select_related(
@@ -31,6 +31,15 @@ class TraderViewSet(viewsets.ModelViewSet):
         'informal_details__national_id_resident_id',
     ]
     ordering_fields = ['created_at', 'status', 'trader_id']
+
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy',
+                           'register_legal', 'register_informal', 'update_legal',
+                           'update_informal', 'submit_record'):
+            classes = [IsDataEncoder]
+        else:
+            classes = [IsTraderReadAllowed]
+        return [cls() for cls in classes]
 
     def get_queryset(self):
         qs = Trader.objects.select_related(
@@ -71,6 +80,16 @@ class TraderViewSet(viewsets.ModelViewSet):
                 Q(assigned_director__full_name__icontains=reviewer)
             )
 
+        user = self.request.user
+        if user.is_authenticated:
+            if user.role == 'DATA_ENCODER' or user.groups.filter(name='DATA_ENCODER').exists():
+                qs = qs.filter(created_by=user)
+                if user.assigned_woreda_id:
+                    qs = qs.filter(woreda_id=user.assigned_woreda_id)
+            elif user.role == 'DIRECTOR' or user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists():
+                if user.assigned_woreda_id:
+                    qs = qs.filter(woreda_id=user.assigned_woreda_id)
+
         return qs
 
     def generate_trader_id(self):
@@ -106,6 +125,8 @@ class TraderViewSet(viewsets.ModelViewSet):
 
         with transaction.atomic():
             target_status = data.get('status', 'SUBMITTED')
+            if target_status not in ('DRAFT', 'SUBMITTED'):
+                return Response({'detail': 'New records may only be created as DRAFT or SUBMITTED.'}, status=status.HTTP_400_BAD_REQUEST)
             trader = Trader.objects.create(
                 trader_id=self.generate_trader_id(),
                 trader_type='LEGAL',
@@ -165,6 +186,8 @@ class TraderViewSet(viewsets.ModelViewSet):
 
         capital = Decimal(str(data.get('estimatedCapitalAssets', 0)))
         target_status = data.get('status', 'SUBMITTED')
+        if target_status not in ('DRAFT', 'SUBMITTED'):
+            return Response({'detail': 'New records may only be created as DRAFT or SUBMITTED.'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
             trader = Trader.objects.create(
@@ -209,6 +232,8 @@ class TraderViewSet(viewsets.ModelViewSet):
         trader = self.get_object()
         if trader.trader_type != 'LEGAL':
             return Response({'detail': 'Not a legal trader.', 'code': 'INVALID_TYPE'}, status=status.HTTP_400_BAD_REQUEST)
+        if trader.status not in ('DRAFT', 'NEEDS_CORRECTION', 'RETURNED'):
+            return Response({'detail': 'Only draft or returned records may be edited.'}, status=status.HTTP_409_CONFLICT)
 
         data = request.data
         woreda_id = data.get('woredaId') or data.get('woreda')
@@ -231,11 +256,6 @@ class TraderViewSet(viewsets.ModelViewSet):
             trader.owner_full_name = data['ownerFullName']
         if 'phoneNumber' in data:
             trader.phone_number = data['phoneNumber']
-
-        # If resubmitting after correction
-        if trader.status in ['NEEDS_CORRECTION', 'RETURNED']:
-            trader.status = 'SUBMITTED'
-            trader.submitted_at = timezone.now()
 
         trader.save()
 
@@ -270,6 +290,8 @@ class TraderViewSet(viewsets.ModelViewSet):
         trader = self.get_object()
         if trader.trader_type != 'INFORMAL':
             return Response({'detail': 'Not an informal trader.', 'code': 'INVALID_TYPE'}, status=status.HTTP_400_BAD_REQUEST)
+        if trader.status not in ('DRAFT', 'NEEDS_CORRECTION', 'RETURNED'):
+            return Response({'detail': 'Only draft or returned records may be edited.'}, status=status.HTTP_409_CONFLICT)
 
         data = request.data
         woreda_id = data.get('woredaId') or data.get('woreda')
@@ -291,10 +313,6 @@ class TraderViewSet(viewsets.ModelViewSet):
             trader.owner_full_name = data['fullName']
         if 'phoneNumber' in data:
             trader.phone_number = data['phoneNumber']
-
-        if trader.status in ['NEEDS_CORRECTION', 'RETURNED']:
-            trader.status = 'SUBMITTED'
-            trader.submitted_at = timezone.now()
 
         trader.save()
 
@@ -324,24 +342,27 @@ class TraderViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         trader = self.get_object()
-        trader_id = trader.trader_id
-        trader_name = trader.name
-
+        if trader.created_by_id != request.user.id:
+            return Response({'detail': 'You may only archive records you created.'},
+                            status=status.HTTP_403_FORBIDDEN)
+        if trader.status not in ('DRAFT', 'NEEDS_CORRECTION', 'RETURNED'):
+            return Response({'detail': 'Submitted or finalized records cannot be archived through delete.'},
+                            status=status.HTTP_409_CONFLICT)
         with transaction.atomic():
+            trader.status = 'ARCHIVED'
+            trader.save(update_fields=['status', 'updated_at'] if hasattr(trader, 'updated_at') else ['status'])
             AuditLog.objects.create(
-                action='DELETE_TRADER',
-                trader_id=trader_id,
-                details=f"Deleted trader '{trader_name}' ({trader.trader_type})",
-                user=request.user.username if request.user.is_authenticated else 'system',
+                action='ARCHIVE_TRADER',
+                trader_id=trader.trader_id,
+                details=f"Archived trader '{trader.name}' ({trader.trader_type}); record retained for audit.",
+                user=request.user.username,
             )
-            trader.delete()
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(TraderSerializer(trader).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='submit')
     def submit_record(self, request, trader_id=None):
         trader = self.get_object()
-        if trader.status not in ['DRAFT', 'NEEDS_CORRECTION']:
+        if trader.status not in ['DRAFT', 'NEEDS_CORRECTION', 'RETURNED']:
             return Response({'detail': f'Cannot submit record in status {trader.status}'}, status=status.HTTP_400_BAD_REQUEST)
 
         trader.status = 'SUBMITTED'
