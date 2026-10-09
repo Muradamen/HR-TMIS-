@@ -19,8 +19,4 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
             ],
         ),
-        migrations.AddIndex(
-            model_name='loginattempt',
-            index=models.Index(fields=['updated_at'], name='accounts_lo_updated_12b8d3_idx'),
-        ),
     ]
