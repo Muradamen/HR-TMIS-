@@ -71,6 +71,8 @@ ASGI_APPLICATION = 'config.asgi.application'
 
 # Database configuration: PostgreSQL with fallback to SQLite for lightweight testing
 DATABASE_URL = os.environ.get('DATABASE_URL')
+if DEBUG and DATABASE_URL and 'replace-me' in DATABASE_URL.lower():
+    DATABASE_URL = None  # Allow local SQLite when .env still contains the example placeholder
 
 if DATABASE_URL:
     url = urlparse(DATABASE_URL)
