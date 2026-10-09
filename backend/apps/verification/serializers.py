@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import VerificationLog
 
 class VerificationDecisionSerializer(serializers.Serializer):
-    status = serializers.ChoiceField(choices=['APPROVED', 'RETURNED', 'REJECTED'])
+    status = serializers.ChoiceField(choices=['APPROVED', 'NEEDS_CORRECTION', 'REJECTED'])
     notes = serializers.CharField(required=False, allow_blank=True)
     reason = serializers.CharField(required=False, allow_blank=True)
 
