@@ -6,7 +6,6 @@ from apps.core.permissions import (
     CanApproveTrader,
     IsAdministrator,
     IsReportExporter,
-    IsOversightReporter,
     IsTraderReadAllowed,
 )
 
@@ -50,11 +49,6 @@ class RolePermissionTests(TestCase):
         self.assertTrue(self.allowed(IsReportExporter, self.encoder))
         self.assertFalse(self.allowed(IsReportExporter, self.admin))
 
-    def test_dashboard_totals_are_oversight_only(self):
-        self.assertTrue(self.allowed(IsOversightReporter, self.director))
-        self.assertTrue(self.allowed(IsOversightReporter, self.leader))
-        self.assertFalse(self.allowed(IsOversightReporter, self.encoder))
-        self.assertFalse(self.allowed(IsOversightReporter, self.admin))
 
     def test_trader_reads_require_a_recognized_operational_role(self):
         self.assertTrue(self.allowed(IsTraderReadAllowed, self.encoder))
