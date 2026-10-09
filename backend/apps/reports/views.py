@@ -178,6 +178,14 @@ def get_filtered_traders_queryset(request):
         'legal_details', 'informal_details'
     ).all().order_by('trader_id')
 
+    # Apply authorization scope before handling selected IDs or user-supplied filters.
+    # This prevents a crafted export request from bypassing territorial restrictions.
+    user = request.user
+    if user.is_authenticated and (
+        user.role == 'DIRECTOR' or user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists()
+    ) and user.assigned_woreda_id:
+        queryset = queryset.filter(woreda_id=user.assigned_woreda_id)
+
     data = request.data if request.method == 'POST' and isinstance(request.data, dict) else {}
     params = request.query_params
 
