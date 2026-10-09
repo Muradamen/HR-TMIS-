@@ -305,15 +305,23 @@ def get_filtered_traders_queryset(request):
 
 
 class DashboardStatsView(APIView):
-    permission_classes = [IsOversightReporter]
+    permission_classes = [IsReportExporter]
 
     def get(self, request):
         traders = Trader.objects.all()
+        is_encoder = (
+            request.user.role == 'DATA_ENCODER' or
+            request.user.groups.filter(name='DATA_ENCODER').exists()
+        )
         is_director = (
             request.user.role == 'DIRECTOR' or
             request.user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists()
         )
-        if is_director and request.user.assigned_woreda_id:
+        if is_encoder:
+            traders = traders.filter(created_by=request.user)
+            if request.user.assigned_woreda_id:
+                traders = traders.filter(woreda_id=request.user.assigned_woreda_id)
+        elif is_director and request.user.assigned_woreda_id:
             traders = traders.filter(woreda_id=request.user.assigned_woreda_id)
 
         total_traders = traders.count()
@@ -326,7 +334,9 @@ class DashboardStatsView(APIView):
         rejected_count = traders.filter(status='REJECTED').count()
 
         woredas = Woreda.objects.filter(is_active=True).order_by('name')
-        if is_director and request.user.assigned_woreda_id:
+        if is_encoder:
+            woredas = woredas.filter(id__in=traders.values_list('woreda_id', flat=True).distinct())
+        elif is_director and request.user.assigned_woreda_id:
             woredas = woredas.filter(id=request.user.assigned_woreda_id)
         distribution_by_woreda = []
         woreda_distribution = {}
