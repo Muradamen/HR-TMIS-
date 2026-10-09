@@ -222,6 +222,11 @@ class HTTMISIntegrationTests(TestCase):
 
     def test_multilingual_csv_export(self):
         """CSV export supports en, om, am with UTF-8 BOM for an authorized Director."""
+        Trader.objects.create(
+            trader_id='HTT-TEST-CSV-01', trader_type='LEGAL', status='APPROVED',
+            name='CSV Test Trader', owner_full_name='CSV Test Owner',
+            woreda=self.woreda_an, kebele=self.kebele_an1, created_by=self.encoder,
+        )
         self.client.force_authenticate(user=self.director)
 
         for lang in ['en', 'om', 'am']:
@@ -231,6 +236,11 @@ class HTTMISIntegrationTests(TestCase):
 
     def test_excel_export(self):
         """Excel export generates valid XLSX file for an authorized Director."""
+        Trader.objects.create(
+            trader_id='HTT-TEST-XLSX-01', trader_type='LEGAL', status='APPROVED',
+            name='Excel Test Trader', owner_full_name='Excel Test Owner',
+            woreda=self.woreda_an, kebele=self.kebele_an1, created_by=self.encoder,
+        )
         self.client.force_authenticate(user=self.director)
         res = self.client.get('/api/v1/reports/export/excel/?lang=en')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
