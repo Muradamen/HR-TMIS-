@@ -64,18 +64,20 @@ class CanApproveTrader(permissions.BasePermission):
 
 
 class IsReportExporter(permissions.BasePermission):
-    """Only Directors and Agency Leaders may export bulk trader data."""
+    """Data Encoders may export only their own scoped records; Directors and Agency Leaders may export oversight data."""
     def has_permission(self, request, view):
-        user = request.user
-        if not _authenticated(user):
-            return False
-        if user.role in ('SYSTEM_ADMINISTRATOR', 'DATA_ENCODER'):
-            return False
-        if _has_group(user, 'ADMINISTRATOR', 'DATA_ENCODER'):
-            return False
+        return any(
+            permission().has_permission(request, view)
+            for permission in (IsDataEncoder, IsDirector, IsAgencyLeader)
+        )
+
+
+class IsOversightReporter(permissions.BasePermission):
+    """Dashboard-wide statistics are limited to Directors and Agency Leaders."""
+    def has_permission(self, request, view):
         return (
-            user.role in ('DIRECTOR', 'AGENCY_LEADER') or
-            _has_group(user, 'DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER')
+            IsDirector().has_permission(request, view) or
+            IsAgencyLeader().has_permission(request, view)
         )
 
 
