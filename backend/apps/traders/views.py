@@ -110,6 +110,16 @@ class TraderViewSet(viewsets.ModelViewSet):
             conflict = APIException('Only draft or returned records may be edited.')
             conflict.status_code = status.HTTP_409_CONFLICT
             raise conflict
+        if 'woreda' in serializer.validated_data or 'kebele' in serializer.validated_data:
+            woreda = serializer.validated_data.get('woreda', trader.woreda)
+            kebele = serializer.validated_data.get('kebele', trader.kebele)
+            from rest_framework.exceptions import PermissionDenied, ValidationError
+            if not woreda.is_active or not kebele.is_active:
+                raise ValidationError('Inactive Woreda or Kebele cannot be selected.')
+            if self.request.user.assigned_woreda_id and woreda.id != self.request.user.assigned_woreda_id:
+                raise PermissionDenied('Selected Woreda is outside your assigned territory.')
+            if kebele.woreda_id != woreda.id:
+                raise ValidationError('Selected Kebele must belong to the selected Woreda.')
         serializer.save()
 
     def generate_trader_id(self):
