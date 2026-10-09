@@ -304,23 +304,29 @@ class DashboardStatsView(APIView):
     permission_classes = [IsReportExporter]
 
     def get(self, request):
-        total_traders = Trader.objects.count()
-        legal_count = Trader.objects.filter(trader_type='LEGAL').count()
-        informal_count = Trader.objects.filter(trader_type='INFORMAL').count()
+        trader_qs = Trader.objects.all()
+        director = request.user.role == 'DIRECTOR' or request.user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists()
+        if director and request.user.assigned_woreda_id:
+            trader_qs = trader_qs.filter(woreda_id=request.user.assigned_woreda_id)
 
-        pending_count = Trader.objects.filter(status='SUBMITTED').count()
-        under_review_count = Trader.objects.filter(status='UNDER_REVIEW').count()
-        approved_count = Trader.objects.filter(status='APPROVED').count()
-        returned_count = Trader.objects.filter(status__in=['NEEDS_CORRECTION', 'RETURNED']).count()
-        rejected_count = Trader.objects.filter(status='REJECTED').count()
+        total_traders = trader_qs.count()
+        legal_count = trader_qs.filter(trader_type='LEGAL').count()
+        informal_count = trader_qs.filter(trader_type='INFORMAL').count()
+        pending_count = trader_qs.filter(status='SUBMITTED').count()
+        under_review_count = trader_qs.filter(status='UNDER_REVIEW').count()
+        approved_count = trader_qs.filter(status='APPROVED').count()
+        returned_count = trader_qs.filter(status='NEEDS_CORRECTION').count()
+        rejected_count = trader_qs.filter(status='REJECTED').count()
 
         # Breakdown by Woreda
         woredas = Woreda.objects.filter(is_active=True).order_by('name')
+        if director and request.user.assigned_woreda_id:
+            woredas = woredas.filter(id=request.user.assigned_woreda_id)
         distribution_by_woreda = []
         for w in woredas:
-            w_total = Trader.objects.filter(woreda=w).count()
-            w_legal = Trader.objects.filter(woreda=w, trader_type='LEGAL').count()
-            w_informal = Trader.objects.filter(woreda=w, trader_type='INFORMAL').count()
+            w_total = trader_qs.filter(woreda=w).count()
+            w_legal = trader_qs.filter(woreda=w, trader_type='LEGAL').count()
+            w_informal = trader_qs.filter(woreda=w, trader_type='INFORMAL').count()
             distribution_by_woreda.append({
                 'woredaId': w.id,
                 'woredaName': w.name,
@@ -332,7 +338,7 @@ class DashboardStatsView(APIView):
 
         # Breakdown by Sector (Legal)
         sector_counts = (
-            LegalTrader.objects.values('business_sector')
+            LegalTrader.objects.filter(trader__in=trader_qs).values('business_sector')
             .annotate(count=Count('id'))
             .order_by('-count')
         )
@@ -342,7 +348,7 @@ class DashboardStatsView(APIView):
         ]
 
         # Informal Capital Summary
-        informal_agg = InformalTrader.objects.aggregate(
+        informal_agg = InformalTrader.objects.filter(trader__in=trader_qs).aggregate(
             totalCapital=Sum('estimated_capital_assets'),
             averageCapital=Avg('estimated_capital_assets'),
             count=Count('id')
@@ -355,7 +361,7 @@ class DashboardStatsView(APIView):
 
         # Formalization breakdown
         formalization_counts = (
-            FormalizationAssessment.objects.values('status')
+            FormalizationAssessment.objects.filter(trader__in=trader_qs).values('status')
             .annotate(count=Count('id'))
             .order_by('status')
         )
