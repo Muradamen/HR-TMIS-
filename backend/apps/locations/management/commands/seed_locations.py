@@ -36,14 +36,6 @@ HARARI_WOREDAS_DATA = [
         ]
     },
     {
-        'name': 'Aboker',
-        'code': 'AK-05',
-        'kebeles': [
-            {'name': 'Kebele 10 (Aboker North)', 'code': 'AK-K10'},
-            {'name': 'Kebele 11 (Aboker South)', 'code': 'AK-K11'},
-        ]
-    },
-    {
         'name': 'Hakim',
         'code': 'HK-06',
         'kebeles': [
@@ -68,7 +60,7 @@ HARARI_WOREDAS_DATA = [
         ]
     },
     {
-        'name': 'Dire Teyyara',
+        'name': 'Dire Teyara',
         'code': 'DT-09',
         'kebeles': [
             {'name': 'Kebele 18 (Hasengey)', 'code': 'DT-K18'},
@@ -87,20 +79,25 @@ class Command(BaseCommand):
         )
         self.stdout.write(f"Region: {region.name}")
 
+        # Aboker is not part of the current eight-Woreda reference list. Keep historical
+        # trader links intact while removing it from active location choices.
+        Woreda.objects.filter(name__iexact='Aboker').update(is_active=False)
+
         woredas_created = 0
         kebeles_created = 0
 
         for w_data in HARARI_WOREDAS_DATA:
             woreda, created = Woreda.objects.get_or_create(
-                name=w_data['name'],
-                defaults={
-                    'region': region,
-                    'code': w_data['code'],
-                    'is_active': True
-                }
+                region=region,
+                code=w_data['code'],
+                defaults={'name': w_data['name'], 'is_active': True}
             )
             if created:
                 woredas_created += 1
+            elif woreda.name != w_data['name'] or not woreda.is_active:
+                woreda.name = w_data['name']
+                woreda.is_active = True
+                woreda.save(update_fields=['name', 'is_active'])
 
             for k_data in w_data['kebeles']:
                 _, k_created = Kebele.objects.get_or_create(
