@@ -82,13 +82,15 @@ if DATABASE_URL:
             'PORT': url.port or 5432,
         }
     }
-else:
+elif DEBUG:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+else:
+    raise RuntimeError('DATABASE_URL is required when DEBUG is disabled.')
 
 AUTH_USER_MODEL = 'accounts.User'
 
