@@ -183,6 +183,10 @@ export const TradersList: React.FC<TradersListProps> = ({
     fetchTraders();
   }, [fetchTraders]);
 
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [activeFilters]);
+
   // Checkbox state for header
   const isAllCurrentPageSelected = useMemo(() => {
     return displayedTraders.length > 0 && displayedTraders.every(t => selectedIds.has(t.traderId));
