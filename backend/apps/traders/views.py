@@ -124,7 +124,7 @@ class TraderViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'A trader with this Registration Number already exists.', 'code': 'DUPLICATE_REGISTRATION_NUMBER'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
-            target_status = data.get('status', 'SUBMITTED')
+            target_status = 'SUBMITTED'
             trader = Trader.objects.create(
                 trader_id=self.generate_trader_id(),
                 trader_type='LEGAL',
@@ -183,7 +183,7 @@ class TraderViewSet(viewsets.ModelViewSet):
             )
 
         capital = Decimal(str(data.get('estimatedCapitalAssets', 0)))
-        target_status = data.get('status', 'SUBMITTED')
+        target_status = 'SUBMITTED'
 
         with transaction.atomic():
             trader = Trader.objects.create(
