@@ -164,9 +164,12 @@ SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '1800'))
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 if not DEBUG:
-    if not os.environ.get('DJANGO_SECRET_KEY'):
-        raise RuntimeError('DJANGO_SECRET_KEY must be set in production.')
-    if '*' in ALLOWED_HOSTS:
+    if (not os.environ.get('DJANGO_SECRET_KEY') or len(SECRET_KEY) < 50 or
+            'replace-with' in SECRET_KEY.lower() or 'change-me' in SECRET_KEY.lower()):
+        raise RuntimeError('Set a strong, unique DJANGO_SECRET_KEY (at least 50 characters) in production.')
+    if not DATABASE_URL or 'replace-me' in DATABASE_URL.lower():
+        raise RuntimeError('Set a valid production DATABASE_URL before starting Django.')
+    if not ALLOWED_HOSTS or '*' in ALLOWED_HOSTS:
         raise RuntimeError('Wildcard ALLOWED_HOSTS is forbidden in production.')
     SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True').lower() == 'true'
     SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '31536000'))
