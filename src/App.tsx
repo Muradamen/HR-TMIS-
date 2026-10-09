@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from './context/AppContext';
 import { useTranslation } from './i18n/context';
 import { Navbar } from './components/layout/Navbar';
@@ -40,6 +40,14 @@ export const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<string>(() =>
     getInitialViewForRole(currentUser.role)
   );
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (currentUser.role === 'DIRECTOR') setCurrentView('verification');
+    else if (currentUser.role === 'AGENCY_LEADER') setCurrentView('reports');
+    else if (currentUser.role === 'SYSTEM_ADMINISTRATOR') setCurrentView('locations');
+    else setCurrentView('traders-all');
+  }, [isAuthenticated, currentUser.role]);
   const [selectedTraderId, setSelectedTraderId] = useState<string | null>(null);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [certificateTraderId, setCertificateTraderId] = useState<string | null>(null);
