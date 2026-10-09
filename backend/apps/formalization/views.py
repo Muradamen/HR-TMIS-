@@ -20,6 +20,17 @@ class FormalizationViewSet(viewsets.ModelViewSet):
             classes = [IsFormalizationReader]
         return [cls() for cls in classes]
 
+    def get_queryset(self):
+        qs = FormalizationAssessment.objects.select_related(
+            'trader', 'trader__woreda', 'assigned_mentor', 'assessed_by'
+        ).all()
+        user = self.request.user
+        if user.is_authenticated and (
+            user.role == 'DIRECTOR' or user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists()
+        ) and user.assigned_woreda_id:
+            qs = qs.filter(trader__woreda_id=user.assigned_woreda_id)
+        return qs
+
     @action(detail=False, methods=['post'], url_path='assess')
     def assess_trader(self, request):
         trader_id = request.data.get('trader_id') or request.data.get('traderId')
@@ -28,11 +39,19 @@ class FormalizationViewSet(viewsets.ModelViewSet):
         except Trader.DoesNotExist:
             return Response({'detail': f'Trader {trader_id} not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+        if (request.user.role == 'DIRECTOR' or request.user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists()) and request.user.assigned_woreda_id and trader.woreda_id != request.user.assigned_woreda_id:
+            return Response({'detail': 'This trader is outside your assigned Woreda.'}, status=status.HTTP_403_FORBIDDEN)
+
         if trader.trader_type != 'INFORMAL':
             return Response({'detail': 'Formalization assessment is only applicable to informal traders.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        requested_status = request.data.get('status')
+        allowed_statuses = {choice[0] for choice in FormalizationAssessment.STATUS_CHOICES}
+        if requested_status is not None and requested_status not in allowed_statuses:
+            return Response({'detail': 'Invalid formalization status.'}, status=status.HTTP_400_BAD_REQUEST)
+
         assessment, created = FormalizationAssessment.objects.get_or_create(trader=trader)
-        assessment.status = request.data.get('status', assessment.status)
+        assessment.status = requested_status or assessment.status
         assessment.support_package = request.data.get('support_package', assessment.support_package)
         assessment.notes = request.data.get('notes', assessment.notes)
         assessment.assessed_by = request.user
