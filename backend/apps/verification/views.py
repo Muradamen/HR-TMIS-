@@ -108,3 +108,15 @@ class VerificationDecisionView(APIView):
             )
 
         return Response(TraderSerializer(trader).data)
+
+class VerificationHistoryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, trader_id):
+        try:
+            trader = Trader.objects.get(trader_id=trader_id)
+        except Trader.DoesNotExist:
+            return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        logs = VerificationLog.objects.filter(trader=trader).order_by('-timestamp')
+        return Response(VerificationLogSerializer(logs, many=True).data)

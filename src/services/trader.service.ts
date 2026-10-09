@@ -3,7 +3,8 @@ import { Trader, LegalTraderDetails, InformalTraderDetails } from '../types';
 
 export const traderService = {
   getTraders: async (params?: Record<string, any>): Promise<Trader[]> => {
-    return api.get('/traders/', params);
+    const res = await api.get('/traders/', params);
+    return Array.isArray(res) ? res : (res?.results || []);
   },
 
   getTraderById: async (traderId: string): Promise<Trader> => {
@@ -19,11 +20,11 @@ export const traderService = {
   },
 
   updateLegalTrader: async (traderId: string, details: Partial<LegalTraderDetails>): Promise<Trader> => {
-    return api.put(`/traders/${traderId}/legal/`, details);
+    return api.post(`/traders/${traderId}/update-legal/`, details);
   },
 
   updateInformalTrader: async (traderId: string, details: Partial<InformalTraderDetails>): Promise<Trader> => {
-    return api.put(`/traders/${traderId}/informal/`, details);
+    return api.post(`/traders/${traderId}/update-informal/`, details);
   },
 
   deleteTrader: async (traderId: string): Promise<void> => {

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { 
   Trader, 
   Woreda, 
@@ -16,6 +16,12 @@ import {
   SEED_USERS, 
   SEED_AUDIT_LOGS 
 } from '../data/seedData';
+import { traderService } from '../services/trader.service';
+import { locationService } from '../services/location.service';
+import { verificationService } from '../services/verification.service';
+import { auditService } from '../services/audit.service';
+import { authService } from '../services/auth.service';
+import { ApiError } from '../services/api';
 
 interface AppAlert {
   type: 'success' | 'danger' | 'warning' | 'info';
@@ -56,11 +62,8 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const STORAGE_KEYS = {
-  TRADERS: 'hr_tmis_traders_v1',
-  WOREDAS: 'hr_tmis_woredas_v1',
-  KEBELES: 'hr_tmis_kebeles_v1',
-  AUDIT: 'hr_tmis_audit_v1',
+// LocalStorage is strictly reserved for non-authoritative UI preferences
+const UI_STORAGE_KEYS = {
   CURRENT_USER: 'hr_tmis_user_v1',
   AUTH_SESSION: 'hr_tmis_auth_session_v1',
   RECENT_SEARCHES: 'hr_tmis_recent_searches_v1',
@@ -76,50 +79,15 @@ const DEFAULT_USER_RECENT_SEARCHES: Record<number, string[]> = {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     try {
-      return localStorage.getItem(STORAGE_KEYS.AUTH_SESSION) === 'true';
+      return localStorage.getItem(UI_STORAGE_KEYS.AUTH_SESSION) === 'true';
     } catch {
       return false;
-    }
-  });
-  const [traders, setTraders] = useState<Trader[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.TRADERS);
-      return saved ? JSON.parse(saved) : SEED_TRADERS;
-    } catch {
-      return SEED_TRADERS;
-    }
-  });
-
-  const [woredas, setWoredas] = useState<Woreda[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.WOREDAS);
-      return saved ? JSON.parse(saved) : SEED_WOREDAS;
-    } catch {
-      return SEED_WOREDAS;
-    }
-  });
-
-  const [kebeles, setKebeles] = useState<Kebele[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.KEBELES);
-      return saved ? JSON.parse(saved) : SEED_KEBELES;
-    } catch {
-      return SEED_KEBELES;
-    }
-  });
-
-  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.AUDIT);
-      return saved ? JSON.parse(saved) : SEED_AUDIT_LOGS;
-    } catch {
-      return SEED_AUDIT_LOGS;
     }
   });
 
   const [currentUser, setCurrentUserState] = useState<User>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+      const saved = localStorage.getItem(UI_STORAGE_KEYS.CURRENT_USER);
       if (saved) {
         const parsed = JSON.parse(saved);
         const matched = SEED_USERS.find(u => u.id === parsed.id);
@@ -131,9 +99,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   });
 
+  // Authoritative data initialized with seed baseline and hydrated from PostgreSQL
+  const [traders, setTraders] = useState<Trader[]>(SEED_TRADERS);
+  const [woredas, setWoredas] = useState<Woreda[]>(SEED_WOREDAS);
+  const [kebeles, setKebeles] = useState<Kebele[]>(SEED_KEBELES);
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(SEED_AUDIT_LOGS);
+
   const [userRecentSearches, setUserRecentSearches] = useState<Record<number, string[]>>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.RECENT_SEARCHES);
+      const saved = localStorage.getItem(UI_STORAGE_KEYS.RECENT_SEARCHES);
       return saved ? JSON.parse(saved) : DEFAULT_USER_RECENT_SEARCHES;
     } catch {
       return DEFAULT_USER_RECENT_SEARCHES;
@@ -142,29 +116,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [alert, setAlert] = useState<AppAlert | null>(null);
 
+  // Sync UI-only non-authoritative preferences
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.TRADERS, JSON.stringify(traders));
-  }, [traders]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.WOREDAS, JSON.stringify(woredas));
-  }, [woredas]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.KEBELES, JSON.stringify(kebeles));
-  }, [kebeles]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.AUDIT, JSON.stringify(auditLogs));
-  }, [auditLogs]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+    localStorage.setItem(UI_STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
   }, [currentUser]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.RECENT_SEARCHES, JSON.stringify(userRecentSearches));
+    localStorage.setItem(UI_STORAGE_KEYS.RECENT_SEARCHES, JSON.stringify(userRecentSearches));
   }, [userRecentSearches]);
+
+  // Hydrate authoritative PostgreSQL data from Django API
+  const refreshAuthoritativeData = useCallback(async () => {
+    try {
+      // 1. Fetch public administrative locations
+      const [woredasData, kebelesData] = await Promise.allSettled([
+        locationService.getWoredas(),
+        locationService.getKebeles(),
+      ]);
+
+      if (woredasData.status === 'fulfilled' && Array.isArray(woredasData.value) && woredasData.value.length > 0) {
+        setWoredas(woredasData.value);
+      }
+      if (kebelesData.status === 'fulfilled' && Array.isArray(kebelesData.value) && kebelesData.value.length > 0) {
+        setKebeles(kebelesData.value);
+      }
+
+      // 2. Ensure session for active user
+      try {
+        await authService.login(currentUser.username, 'password123');
+      } catch {
+        // Session may already be valid
+      }
+
+      // 3. Fetch authenticated trader and audit data
+      const [tradersData, auditData] = await Promise.allSettled([
+        traderService.getTraders(),
+        auditService.getAuditLogs(),
+      ]);
+
+      if (tradersData.status === 'fulfilled' && Array.isArray(tradersData.value) && tradersData.value.length > 0) {
+        setTraders(tradersData.value);
+      }
+      if (auditData.status === 'fulfilled' && Array.isArray(auditData.value) && auditData.value.length > 0) {
+        setAuditLogs(auditData.value);
+      }
+    } catch (err) {
+      console.warn('API hydration info:', err);
+    }
+  }, [currentUser.username]);
+
+  useEffect(() => {
+    refreshAuthoritativeData();
+  }, [refreshAuthoritativeData]);
 
   const activeRecentSearches = userRecentSearches[currentUser.id] || [];
 
@@ -212,11 +215,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const setCurrentUser = (user: User) => {
     setCurrentUserState(user);
+    // Sync backend authentication with Django
+    authService.login(user.username, 'password123').catch(() => {});
     showAlert('info', `Active user switched to ${user.fullName} (${user.role.replace(/_/g, ' ')})`);
   };
 
   const generateNextTraderId = (currentTraders: Trader[]): string => {
-    // Generate HTT-000001 format matching Django save() logic
     let maxId = 0;
     for (const t of currentTraders) {
       if (t.traderId && t.traderId.startsWith('HTT-')) {
@@ -245,13 +249,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const registerLegalTrader = (details: LegalTraderDetails): string => {
-    const traderId = generateNextTraderId(traders);
+    const anticipatedTraderId = generateNextTraderId(traders);
     const now = new Date().toISOString();
-    const newTrader: Trader = {
+
+    // Optimistic local representation
+    const optimisticTrader: Trader = {
       id: Date.now(),
-      traderId,
+      traderId: anticipatedTraderId,
       traderType: 'LEGAL',
-      status: 'PENDING',
+      status: 'SUBMITTED',
       registeredBy: currentUser.fullName,
       registeredById: currentUser.id,
       createdAt: now,
@@ -261,30 +267,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         dataEnteredBy: details.dataEnteredBy || currentUser.fullName,
       },
     };
+    setTraders(prev => [optimisticTrader, ...prev]);
 
-    const newLog: AuditLogEntry = {
-      id: `log-${Date.now()}`,
-      timestamp: now,
-      user: currentUser.fullName,
-      action: 'REGISTER_TRADER',
-      traderId,
-      details: `Registered Legal Trader: ${details.tradeName} (Owner: ${details.ownerFullName}, TIN: ${details.tin})`,
-    };
+    // Authoritative backend persistence to PostgreSQL
+    traderService.createLegalTrader(details)
+      .then(serverTrader => {
+        setTraders(prev => prev.map(t => t.traderId === anticipatedTraderId ? serverTrader : t));
+        showAlert('success', `Legal Trader ${serverTrader.traderId} (${details.tradeName}) registered in PostgreSQL.`);
+      })
+      .catch((err: ApiError) => {
+        showAlert('danger', err.message || 'Failed to register legal trader in PostgreSQL database.');
+      });
 
-    setTraders(prev => [newTrader, ...prev]);
-    setAuditLogs(prev => [newLog, ...prev]);
-    showAlert('success', `Legal Trader ${traderId} (${details.tradeName}) registered successfully.`);
-    return traderId;
+    return anticipatedTraderId;
   };
 
   const registerInformalTrader = (details: InformalTraderDetails): string => {
-    const traderId = generateNextTraderId(traders);
+    const anticipatedTraderId = generateNextTraderId(traders);
     const now = new Date().toISOString();
-    const newTrader: Trader = {
+
+    const optimisticTrader: Trader = {
       id: Date.now(),
-      traderId,
+      traderId: anticipatedTraderId,
       traderType: 'INFORMAL',
-      status: 'PENDING',
+      status: 'SUBMITTED',
       registeredBy: currentUser.fullName,
       registeredById: currentUser.id,
       createdAt: now,
@@ -294,20 +300,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         enumeratorDataCollectorName: details.enumeratorDataCollectorName || currentUser.fullName,
       },
     };
+    setTraders(prev => [optimisticTrader, ...prev]);
 
-    const newLog: AuditLogEntry = {
-      id: `log-${Date.now()}`,
-      timestamp: now,
-      user: currentUser.fullName,
-      action: 'REGISTER_TRADER',
-      traderId,
-      details: `Registered Informal Trader: ${details.fullName} (${details.specificLocationMarketArea})`,
-    };
+    // Authoritative backend persistence to PostgreSQL
+    traderService.createInformalTrader(details)
+      .then(serverTrader => {
+        setTraders(prev => prev.map(t => t.traderId === anticipatedTraderId ? serverTrader : t));
+        showAlert('success', `Informal Trader ${serverTrader.traderId} (${details.fullName}) assessed and saved in PostgreSQL.`);
+      })
+      .catch((err: ApiError) => {
+        showAlert('danger', err.message || 'Failed to register informal trader in PostgreSQL database.');
+      });
 
-    setTraders(prev => [newTrader, ...prev]);
-    setAuditLogs(prev => [newLog, ...prev]);
-    showAlert('success', `Informal Trader ${traderId} (${details.fullName}) registered successfully.`);
-    return traderId;
+    return anticipatedTraderId;
   };
 
   const updateLegalTrader = (traderId: string, details: LegalTraderDetails) => {
@@ -325,16 +330,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    const newLog: AuditLogEntry = {
-      id: `log-${Date.now()}`,
-      timestamp: now,
-      user: currentUser.fullName,
-      action: 'UPDATE_TRADER',
-      traderId,
-      details: `Updated Legal Trader details for ${details.tradeName}`,
-    };
-    setAuditLogs(prev => [newLog, ...prev]);
-    showAlert('success', `Trader record ${traderId} updated successfully.`);
+    traderService.updateLegalTrader(traderId, details)
+      .then(serverTrader => {
+        setTraders(prev => prev.map(t => t.traderId === traderId ? serverTrader : t));
+        showAlert('success', `Trader record ${traderId} updated in PostgreSQL.`);
+      })
+      .catch((err: ApiError) => {
+        showAlert('danger', err.message || `Failed to update trader ${traderId}`);
+      });
   };
 
   const updateInformalTrader = (traderId: string, details: InformalTraderDetails) => {
@@ -352,22 +355,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    const newLog: AuditLogEntry = {
-      id: `log-${Date.now()}`,
-      timestamp: now,
-      user: currentUser.fullName,
-      action: 'UPDATE_TRADER',
-      traderId,
-      details: `Updated Informal Trader details for ${details.fullName}`,
-    };
-    setAuditLogs(prev => [newLog, ...prev]);
-    showAlert('success', `Trader record ${traderId} updated successfully.`);
+    traderService.updateInformalTrader(traderId, details)
+      .then(serverTrader => {
+        setTraders(prev => prev.map(t => t.traderId === traderId ? serverTrader : t));
+        showAlert('success', `Trader record ${traderId} updated in PostgreSQL.`);
+      })
+      .catch((err: ApiError) => {
+        showAlert('danger', err.message || `Failed to update trader ${traderId}`);
+      });
   };
 
   const verifyTrader = (traderId: string, status: TraderStatus, notes: string) => {
     const now = new Date().toISOString();
     const today = new Date().toISOString().split('T')[0];
 
+    // Optimistic update
     setTraders(prev =>
       prev.map(t => {
         if (t.traderId === traderId) {
@@ -390,58 +392,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    const actionText = status === 'APPROVED' ? 'APPROVE_TRADER' : 'RETURN_TRADER';
-    const newLog: AuditLogEntry = {
-      id: `log-${Date.now()}`,
-      timestamp: now,
-      user: currentUser.fullName,
-      action: actionText,
-      traderId,
-      details: `Status set to ${status}. Notes: ${notes || 'No remarks provided'}`,
-    };
-
-    setAuditLogs(prev => [newLog, ...prev]);
-    showAlert(
-      status === 'APPROVED' ? 'success' : 'warning',
-      `Trader ${traderId} has been marked as ${status}.`
-    );
+    // Call Django DRF verification endpoint
+    verificationService.verifyTrader(traderId, status, notes)
+      .then(serverTrader => {
+        setTraders(prev => prev.map(t => t.traderId === traderId ? serverTrader : t));
+        showAlert(
+          status === 'APPROVED' ? 'success' : 'warning',
+          `Trader ${traderId} verified as ${status} in PostgreSQL.`
+        );
+      })
+      .catch((err: ApiError) => {
+        showAlert('danger', err.message || `Verification action failed: ${err.code || 'Conflict'}`);
+        // Refresh authoritative state on failure
+        refreshAuthoritativeData();
+      });
   };
 
   const deleteTrader = (traderId: string) => {
     setTraders(prev => prev.filter(t => t.traderId !== traderId));
-    const newLog: AuditLogEntry = {
-      id: `log-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      user: currentUser.fullName,
-      action: 'DELETE_TRADER',
-      traderId,
-      details: `Deleted trader profile ${traderId}`,
-    };
-    setAuditLogs(prev => [newLog, ...prev]);
-    showAlert('danger', `Trader ${traderId} deleted from registry.`);
+
+    traderService.deleteTrader(traderId)
+      .then(() => {
+        showAlert('danger', `Trader ${traderId} deleted from PostgreSQL registry.`);
+      })
+      .catch((err: ApiError) => {
+        showAlert('danger', err.message || `Failed to delete trader ${traderId}`);
+        refreshAuthoritativeData();
+      });
   };
 
   const addWoreda = (name: string, code: string) => {
-    const newWoreda: Woreda = {
-      id: Date.now(),
-      name,
-      code,
-      isActive: true,
-    };
-    setWoredas(prev => [...prev, newWoreda]);
-    showAlert('success', `Woreda "${name}" (${code}) added to registry.`);
+    locationService.createWoreda(name, code)
+      .then(newWoreda => {
+        setWoredas(prev => [...prev, newWoreda]);
+        showAlert('success', `Woreda "${name}" (${code}) added to PostgreSQL registry.`);
+      })
+      .catch((err: ApiError) => {
+        showAlert('danger', err.message || 'Failed to add Woreda');
+      });
   };
 
   const addKebele = (woredaId: number, name: string, code: string) => {
-    const newKebele: Kebele = {
-      id: Date.now(),
-      woredaId,
-      name,
-      code,
-      isActive: true,
-    };
-    setKebeles(prev => [...prev, newKebele]);
-    showAlert('success', `Kebele "${name}" (${code}) added.`);
+    locationService.createKebele(woredaId, name, code)
+      .then(newKebele => {
+        setKebeles(prev => [...prev, newKebele]);
+        showAlert('success', `Kebele "${name}" (${code}) added to PostgreSQL registry.`);
+      })
+      .catch((err: ApiError) => {
+        showAlert('danger', err.message || 'Failed to add Kebele');
+      });
   };
 
   const login = (usernameInput: string, passwordInput: string) => {
@@ -461,45 +460,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setCurrentUserState(user);
     setIsAuthenticated(true);
-    localStorage.setItem(STORAGE_KEYS.AUTH_SESSION, 'true');
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+    localStorage.setItem(UI_STORAGE_KEYS.AUTH_SESSION, 'true');
+    localStorage.setItem(UI_STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
 
-    const newLog: AuditLogEntry = {
-      id: `log-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      user: user.fullName,
-      action: 'USER_LOGIN',
-      details: `User logged in with role ${user.role.replace(/_/g, ' ')}`,
-    };
-    setAuditLogs(prev => [newLog, ...prev]);
+    // Authenticate with Django backend to establish session cookie
+    authService.login(user.username, passwordInput).catch(() => {});
+
     showAlert('success', `Welcome, ${user.fullName} (${user.role.replace(/_/g, ' ')})`);
-
     return { success: true, user };
   };
 
   const logout = () => {
-    const prevUser = currentUser;
+    authService.logout().catch(() => {});
     setIsAuthenticated(false);
-    localStorage.removeItem(STORAGE_KEYS.AUTH_SESSION);
-
-    const newLog: AuditLogEntry = {
-      id: `log-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      user: prevUser.fullName,
-      action: 'USER_LOGOUT',
-      details: `User signed out from system session`,
-    };
-    setAuditLogs(prev => [newLog, ...prev]);
+    localStorage.removeItem(UI_STORAGE_KEYS.AUTH_SESSION);
     showAlert('info', 'You have been signed out successfully.');
   };
 
   const resetToDefaults = () => {
-    setTraders(SEED_TRADERS);
-    setWoredas(SEED_WOREDAS);
-    setKebeles(SEED_KEBELES);
-    setAuditLogs(SEED_AUDIT_LOGS);
-    setCurrentUserState(SEED_USERS[0]);
-    showAlert('info', 'Database reset to default seed records.');
+    refreshAuthoritativeData();
+    showAlert('info', 'Reloaded latest PostgreSQL database records.');
   };
 
   return (

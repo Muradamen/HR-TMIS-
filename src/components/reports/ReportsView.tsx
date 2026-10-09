@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/context';
+import { reportsService } from '../../services/reports.service';
 
 export const ReportsView: React.FC = () => {
   const { traders, woredas, currentUser, showAlert, getWoredaName } = useApp();
@@ -244,6 +245,42 @@ export const ReportsView: React.FC = () => {
     showAlert('success', t('reports.csvExportSuccess', 'Statistical report exported to CSV successfully.'));
   };
 
+  const handleExportServerExcel = async () => {
+    setIsExportDropdownOpen(false);
+    try {
+      const blob = await reportsService.downloadExcel({ lang: language });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `HR-TMIS_Traders_${language}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      showAlert('success', 'Server Excel workbook exported successfully.');
+    } catch {
+      showAlert('danger', 'Failed to generate Excel export.');
+    }
+  };
+
+  const handleExportServerCsv = async () => {
+    setIsExportDropdownOpen(false);
+    try {
+      const blob = await reportsService.downloadCsv({ lang: language });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `HR-TMIS_Registry_${language}_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      showAlert('success', 'Server CSV exported successfully.');
+    } catch {
+      showAlert('danger', 'Failed to generate CSV export.');
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -307,6 +344,36 @@ export const ReportsView: React.FC = () => {
                   <div>
                     <span className="d-block fw-medium">{t('reports.exportCsvWoreda', 'Woreda Territorial Breakdown CSV')}</span>
                     <small className="text-muted">Tabular Woreda counts & regional shares</small>
+                  </div>
+                </button>
+              </li>
+              <li><hr className="dropdown-divider my-1" /></li>
+              <li className="dropdown-header text-uppercase small fw-bold">
+                <i className="bi bi-database me-1"></i> PostgreSQL Authoritative Exports
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="dropdown-item d-flex align-items-center gap-2 py-2"
+                  onClick={handleExportServerExcel}
+                >
+                  <i className="bi bi-file-earmark-excel-fill text-success"></i>
+                  <div>
+                    <span className="d-block fw-medium">Export Excel Workbook (.xlsx)</span>
+                    <small className="text-muted">Formatted openpyxl multi-column export</small>
+                  </div>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="dropdown-item d-flex align-items-center gap-2 py-2"
+                  onClick={handleExportServerCsv}
+                >
+                  <i className="bi bi-filetype-csv text-primary"></i>
+                  <div>
+                    <span className="d-block fw-medium">Export Registry CSV (BOM UTF-8)</span>
+                    <small className="text-muted">All 28 localized database fields</small>
                   </div>
                 </button>
               </li>

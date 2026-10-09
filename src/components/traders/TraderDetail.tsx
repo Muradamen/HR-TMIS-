@@ -117,14 +117,29 @@ export const TraderDetail: React.FC<TraderDetailProps> = ({
                   <i className="bi bi-patch-check-fill"></i> {t('status.APPROVED', 'APPROVED & VERIFIED')}
                 </span>
               )}
-              {trader.status === 'PENDING' && (
+              {(trader.status === 'PENDING' || trader.status === 'SUBMITTED') && (
                 <span className="badge bg-light text-dark fs-6 px-3 py-2 d-inline-flex align-items-center gap-1">
-                  <i className="bi bi-clock-history text-warning"></i> {t('status.PENDING', 'PENDING VERIFICATION')}
+                  <i className="bi bi-clock-history text-warning"></i> {t('status.SUBMITTED', 'SUBMITTED / PENDING')}
                 </span>
               )}
-              {trader.status === 'RETURNED' && (
+              {trader.status === 'UNDER_REVIEW' && (
+                <span className="badge bg-info text-dark fs-6 px-3 py-2 d-inline-flex align-items-center gap-1">
+                  <i className="bi bi-eye-fill"></i> {t('status.UNDER_REVIEW', 'UNDER REVIEW')}
+                </span>
+              )}
+              {(trader.status === 'RETURNED' || trader.status === 'NEEDS_CORRECTION') && (
                 <span className="badge bg-danger fs-6 px-3 py-2 d-inline-flex align-items-center gap-1">
-                  <i className="bi bi-exclamation-triangle-fill"></i> {t('status.RETURNED', 'RETURNED / REJECTED')}
+                  <i className="bi bi-exclamation-triangle-fill"></i> {t('status.NEEDS_CORRECTION', 'NEEDS CORRECTION')}
+                </span>
+              )}
+              {trader.status === 'REJECTED' && (
+                <span className="badge bg-secondary fs-6 px-3 py-2 d-inline-flex align-items-center gap-1">
+                  <i className="bi bi-x-circle-fill"></i> {t('status.REJECTED', 'REJECTED')}
+                </span>
+              )}
+              {trader.status === 'DRAFT' && (
+                <span className="badge bg-light text-muted border fs-6 px-3 py-2 d-inline-flex align-items-center gap-1">
+                  <i className="bi bi-pencil-fill"></i> {t('status.DRAFT', 'DRAFT')}
                 </span>
               )}
             </div>

@@ -1,5 +1,14 @@
 export type TraderType = 'LEGAL' | 'INFORMAL';
-export type TraderStatus = 'PENDING' | 'APPROVED' | 'RETURNED';
+export type TraderStatus = 
+  | 'PENDING' 
+  | 'APPROVED' 
+  | 'RETURNED' 
+  | 'DRAFT' 
+  | 'SUBMITTED' 
+  | 'UNDER_REVIEW' 
+  | 'NEEDS_CORRECTION' 
+  | 'REJECTED' 
+  | 'ARCHIVED';
 
 export type UserRole = 
   | 'SYSTEM_ADMINISTRATOR' 

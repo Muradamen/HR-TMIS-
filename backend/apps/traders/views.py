@@ -47,21 +47,28 @@ class TraderViewSet(viewsets.ModelViewSet):
             woreda = Woreda.objects.get(id=woreda_id)
             kebele = Kebele.objects.get(id=kebele_id)
         except (Woreda.DoesNotExist, Kebele.DoesNotExist):
-            return Response({'detail': 'Invalid Woreda or Kebele ID.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Invalid Woreda or Kebele ID.', 'code': 'INVALID_LOCATION'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if kebele.woreda_id != woreda.id:
+            return Response(
+                {'detail': 'Invalid Woreda/Kebele combination: the selected Kebele does not belong to the selected Woreda.', 'code': 'INVALID_WOREDA_KEBELE_COMBINATION'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         tin = data.get('tin', '').strip()
         trade_reg = data.get('tradeRegistrationNumber', '').strip()
 
         if LegalTrader.objects.filter(tin=tin).exists():
-            return Response({'detail': 'A trader with this TIN is already registered.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'A trader with this TIN is already registered.', 'code': 'DUPLICATE_TIN'}, status=status.HTTP_400_BAD_REQUEST)
         if LegalTrader.objects.filter(trade_registration_number=trade_reg).exists():
-            return Response({'detail': 'A trader with this Registration Number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'A trader with this Registration Number already exists.', 'code': 'DUPLICATE_REGISTRATION_NUMBER'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
+            target_status = data.get('status', 'SUBMITTED')
             trader = Trader.objects.create(
                 trader_id=self.generate_trader_id(),
                 trader_type='LEGAL',
-                status='SUBMITTED',
+                status=target_status,
                 name=data.get('tradeName', ''),
                 owner_full_name=data.get('ownerFullName', ''),
                 phone_number=data.get('phoneNumber', ''),
@@ -69,7 +76,7 @@ class TraderViewSet(viewsets.ModelViewSet):
                 kebele=kebele,
                 specific_location=data.get('houseNumberPlotId', ''),
                 created_by=request.user if request.user.is_authenticated else None,
-                submitted_at=timezone.now(),
+                submitted_at=timezone.now() if target_status == 'SUBMITTED' else None,
             )
 
             LegalTrader.objects.create(
@@ -107,15 +114,22 @@ class TraderViewSet(viewsets.ModelViewSet):
             woreda = Woreda.objects.get(id=woreda_id)
             kebele = Kebele.objects.get(id=kebele_id)
         except (Woreda.DoesNotExist, Kebele.DoesNotExist):
-            return Response({'detail': 'Invalid Woreda or Kebele ID.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Invalid Woreda or Kebele ID.', 'code': 'INVALID_LOCATION'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if kebele.woreda_id != woreda.id:
+            return Response(
+                {'detail': 'Invalid Woreda/Kebele combination: the selected Kebele does not belong to the selected Woreda.', 'code': 'INVALID_WOREDA_KEBELE_COMBINATION'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         capital = Decimal(str(data.get('estimatedCapitalAssets', 0)))
+        target_status = data.get('status', 'SUBMITTED')
 
         with transaction.atomic():
             trader = Trader.objects.create(
                 trader_id=self.generate_trader_id(),
                 trader_type='INFORMAL',
-                status='SUBMITTED',
+                status=target_status,
                 name=data.get('fullName', ''),
                 owner_full_name=data.get('fullName', ''),
                 phone_number=data.get('phoneNumber', ''),
@@ -123,7 +137,7 @@ class TraderViewSet(viewsets.ModelViewSet):
                 kebele=kebele,
                 specific_location=data.get('specificLocationMarketArea', ''),
                 created_by=request.user if request.user.is_authenticated else None,
-                submitted_at=timezone.now(),
+                submitted_at=timezone.now() if target_status == 'SUBMITTED' else None,
             )
 
             InformalTrader.objects.create(
@@ -148,6 +162,140 @@ class TraderViewSet(viewsets.ModelViewSet):
             )
 
         return Response(TraderSerializer(trader).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['put', 'patch'], url_path='update-legal')
+    def update_legal(self, request, trader_id=None):
+        trader = self.get_object()
+        if trader.trader_type != 'LEGAL':
+            return Response({'detail': 'Not a legal trader.', 'code': 'INVALID_TYPE'}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = request.data
+        woreda_id = data.get('woredaId') or data.get('woreda')
+        kebele_id = data.get('kebeleId') or data.get('kebele')
+
+        if woreda_id and kebele_id:
+            try:
+                woreda = Woreda.objects.get(id=woreda_id)
+                kebele = Kebele.objects.get(id=kebele_id)
+                if kebele.woreda_id != woreda.id:
+                    return Response({'detail': 'Invalid Woreda/Kebele combination.', 'code': 'INVALID_WOREDA_KEBELE_COMBINATION'}, status=status.HTTP_400_BAD_REQUEST)
+                trader.woreda = woreda
+                trader.kebele = kebele
+            except (Woreda.DoesNotExist, Kebele.DoesNotExist):
+                return Response({'detail': 'Invalid Woreda or Kebele ID.', 'code': 'INVALID_LOCATION'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if 'tradeName' in data:
+            trader.name = data['tradeName']
+        if 'ownerFullName' in data:
+            trader.owner_full_name = data['ownerFullName']
+        if 'phoneNumber' in data:
+            trader.phone_number = data['phoneNumber']
+
+        # If resubmitting after correction
+        if trader.status in ['NEEDS_CORRECTION', 'RETURNED']:
+            trader.status = 'SUBMITTED'
+            trader.submitted_at = timezone.now()
+
+        trader.save()
+
+        legal = trader.legal_details
+        if 'tin' in data:
+            legal.tin = data['tin']
+        if 'tradeRegistrationNumber' in data:
+            legal.trade_registration_number = data['tradeRegistrationNumber']
+        if 'businessSector' in data:
+            legal.business_sector = data['businessSector']
+        if 'tradeScale' in data:
+            legal.trade_scale = data['tradeScale']
+        if 'businessOwnershipType' in data:
+            legal.business_ownership_type = data['businessOwnershipType']
+        if 'houseNumberPlotId' in data:
+            legal.house_number_plot_id = data['houseNumberPlotId']
+        if 'remarks' in data:
+            legal.remarks = data['remarks']
+        legal.save()
+
+        AuditLog.objects.create(
+            action='UPDATE_TRADER',
+            trader_id=trader.trader_id,
+            details=f"Updated details for legal trader {trader.name}",
+            user=request.user.username if request.user.is_authenticated else 'system',
+        )
+
+        return Response(TraderSerializer(trader).data)
+
+    @action(detail=True, methods=['put', 'patch'], url_path='update-informal')
+    def update_informal(self, request, trader_id=None):
+        trader = self.get_object()
+        if trader.trader_type != 'INFORMAL':
+            return Response({'detail': 'Not an informal trader.', 'code': 'INVALID_TYPE'}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = request.data
+        woreda_id = data.get('woredaId') or data.get('woreda')
+        kebele_id = data.get('kebeleId') or data.get('kebele')
+
+        if woreda_id and kebele_id:
+            try:
+                woreda = Woreda.objects.get(id=woreda_id)
+                kebele = Kebele.objects.get(id=kebele_id)
+                if kebele.woreda_id != woreda.id:
+                    return Response({'detail': 'Invalid Woreda/Kebele combination.', 'code': 'INVALID_WOREDA_KEBELE_COMBINATION'}, status=status.HTTP_400_BAD_REQUEST)
+                trader.woreda = woreda
+                trader.kebele = kebele
+            except (Woreda.DoesNotExist, Kebele.DoesNotExist):
+                return Response({'detail': 'Invalid Woreda or Kebele ID.', 'code': 'INVALID_LOCATION'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if 'fullName' in data:
+            trader.name = data['fullName']
+            trader.owner_full_name = data['fullName']
+        if 'phoneNumber' in data:
+            trader.phone_number = data['phoneNumber']
+
+        if trader.status in ['NEEDS_CORRECTION', 'RETURNED']:
+            trader.status = 'SUBMITTED'
+            trader.submitted_at = timezone.now()
+
+        trader.save()
+
+        informal = trader.informal_details
+        if 'nationalIdResidentId' in data:
+            informal.national_id_resident_id = data['nationalIdResidentId']
+        if 'natureOfTradeActivity' in data:
+            informal.nature_of_trade_activity = data['natureOfTradeActivity']
+        if 'estimatedCapitalAssets' in data:
+            informal.estimated_capital_assets = Decimal(str(data['estimatedCapitalAssets']))
+        if 'reasonForOperatingInformally' in data:
+            informal.reason_for_operating_informally = data['reasonForOperatingInformally']
+        if 'formalizationStatusRecommendation' in data:
+            informal.formalization_status_recommendation = data['formalizationStatusRecommendation']
+        if 'specificLocationMarketArea' in data:
+            informal.specific_location_market_area = data['specificLocationMarketArea']
+        informal.save()
+
+        AuditLog.objects.create(
+            action='UPDATE_TRADER',
+            trader_id=trader.trader_id,
+            details=f"Updated details for informal trader {trader.name}",
+            user=request.user.username if request.user.is_authenticated else 'system',
+        )
+
+        return Response(TraderSerializer(trader).data)
+
+    def destroy(self, request, *args, **kwargs):
+        trader = self.get_object()
+        trader_id = trader.trader_id
+        trader_name = trader.name
+
+        with transaction.atomic():
+            AuditLog.objects.create(
+                action='DELETE_TRADER',
+                trader_id=trader_id,
+                details=f"Deleted trader '{trader_name}' ({trader.trader_type})",
+                user=request.user.username if request.user.is_authenticated else 'system',
+            )
+            trader.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post'], url_path='submit')
     def submit_record(self, request, trader_id=None):

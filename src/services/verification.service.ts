@@ -3,7 +3,8 @@ import { Trader, TraderStatus } from '../types';
 
 export const verificationService = {
   getVerificationQueue: async (params?: Record<string, any>): Promise<Trader[]> => {
-    return api.get('/verification/queue/', params);
+    const res = await api.get('/verification/queue/', params);
+    return Array.isArray(res) ? res : (res?.results || []);
   },
 
   claimTrader: async (traderId: string): Promise<Trader> => {

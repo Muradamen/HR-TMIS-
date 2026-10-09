@@ -26,6 +26,14 @@ function getCsrfToken(): string | null {
   return cookieValue || null;
 }
 
+function getActiveLanguage(): string {
+  try {
+    return localStorage.getItem('hr_tmis_language_v1') || 'en';
+  } catch {
+    return 'en';
+  }
+}
+
 async function request<T = any>(
   endpoint: string,
   options: RequestInit = {}
@@ -37,6 +45,7 @@ async function request<T = any>(
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    'Accept-Language': getActiveLanguage(),
     ...(options.headers as Record<string, string> || {}),
   };
 
@@ -64,6 +73,7 @@ async function request<T = any>(
         errorData?.detail ||
         errorData?.message ||
         `API request failed with status ${response.status}`,
+      code: errorData?.code,
       details: typeof errorData === 'object' ? errorData : undefined,
     };
     throw error;

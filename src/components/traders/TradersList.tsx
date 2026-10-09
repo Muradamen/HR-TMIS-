@@ -430,14 +430,29 @@ export const TradersList: React.FC<TradersListProps> = ({
                             <i className="bi bi-check-circle-fill"></i> {t('status.APPROVED', 'Approved')}
                           </span>
                         )}
-                        {tTrader.status === 'PENDING' && (
+                        {(tTrader.status === 'PENDING' || tTrader.status === 'SUBMITTED') && (
                           <span className="badge bg-warning text-dark d-inline-flex align-items-center gap-1">
-                            <i className="bi bi-clock-fill"></i> {t('status.PENDING', 'Pending')}
+                            <i className="bi bi-clock-fill"></i> {t('status.SUBMITTED', 'Submitted')}
                           </span>
                         )}
-                        {tTrader.status === 'RETURNED' && (
+                        {tTrader.status === 'UNDER_REVIEW' && (
+                          <span className="badge bg-info text-dark d-inline-flex align-items-center gap-1">
+                            <i className="bi bi-eye-fill"></i> {t('status.UNDER_REVIEW', 'Under Review')}
+                          </span>
+                        )}
+                        {(tTrader.status === 'RETURNED' || tTrader.status === 'NEEDS_CORRECTION') && (
                           <span className="badge bg-danger d-inline-flex align-items-center gap-1">
-                            <i className="bi bi-arrow-return-left"></i> {t('status.RETURNED', 'Returned')}
+                            <i className="bi bi-arrow-return-left"></i> {t('status.NEEDS_CORRECTION', 'Needs Correction')}
+                          </span>
+                        )}
+                        {tTrader.status === 'REJECTED' && (
+                          <span className="badge bg-secondary d-inline-flex align-items-center gap-1">
+                            <i className="bi bi-x-circle-fill"></i> {t('status.REJECTED', 'Rejected')}
+                          </span>
+                        )}
+                        {tTrader.status === 'DRAFT' && (
+                          <span className="badge bg-light text-muted border d-inline-flex align-items-center gap-1">
+                            <i className="bi bi-pencil-fill"></i> {t('status.DRAFT', 'Draft')}
                           </span>
                         )}
                       </td>

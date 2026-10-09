@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/context';
+import { reportsService } from '../../services/reports.service';
 
 interface TraderCertificateModalProps {
   traderId: string | null;
@@ -21,6 +22,27 @@ export const TraderCertificateModal: React.FC<TraderCertificateModalProps> = ({
   const isLegal = trader.traderType === 'LEGAL';
   const legal = trader.legalDetails;
   const informal = trader.informalDetails;
+
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
+
+  const handleDownloadServerPdf = async () => {
+    try {
+      setIsPdfLoading(true);
+      const blob = await reportsService.downloadPdf(trader.traderId, language);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Certificate_${trader.traderId}_${language}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err?.message || 'Failed to download certificate PDF');
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
 
   const handlePrint = () => {
     window.print();
@@ -275,6 +297,17 @@ export const TraderCertificateModal: React.FC<TraderCertificateModalProps> = ({
             <button type="button" className="btn btn-secondary" onClick={onClose}>
               {t('common.close', 'Close')}
             </button>
+            {isLegal && trader.status === 'APPROVED' && (
+              <button 
+                type="button" 
+                className="btn btn-outline-danger d-flex align-items-center gap-1"
+                onClick={handleDownloadServerPdf}
+                disabled={isPdfLoading}
+              >
+                <i className={`bi ${isPdfLoading ? 'bi-hourglass-split' : 'bi-file-earmark-pdf'}`}></i>
+                <span>{isPdfLoading ? t('common.loading', 'Generating...') : 'Download Official PDF (Ethiopic / Latin)'}</span>
+              </button>
+            )}
             <button type="button" className="btn btn-primary" onClick={handlePrint}>
               <i className="bi bi-printer me-1"></i> {t('common.print', 'Print Certificate')}
             </button>

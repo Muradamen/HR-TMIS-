@@ -3,11 +3,13 @@ import { Woreda, Kebele } from '../types';
 
 export const locationService = {
   getWoredas: async (): Promise<Woreda[]> => {
-    return api.get('/locations/woredas/');
+    const res = await api.get('/locations/woredas/');
+    return Array.isArray(res) ? res : (res?.results || []);
   },
 
   getKebeles: async (woredaId?: number): Promise<Kebele[]> => {
-    return api.get('/locations/kebeles/', woredaId ? { woreda: woredaId } : undefined);
+    const res = await api.get('/locations/kebeles/', woredaId ? { woreda: woredaId } : undefined);
+    return Array.isArray(res) ? res : (res?.results || []);
   },
 
   createWoreda: async (name: string, code: string): Promise<Woreda> => {

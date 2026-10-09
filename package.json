@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 3000",
+    "dev": "node scripts/start-dev.js",
     "build": "tsc && vite build",
     "lint": "tsc --noEmit",
-    "preview": "vite preview --host 0.0.0.0 --port 3000"
+    "preview": "vite preview --host 0.0.0.0 --port 3000",
+    "test:backend": "python3 backend/manage.py test apps.traders"
   },
   "dependencies": {
     "admin-lte": "^4.10.0",

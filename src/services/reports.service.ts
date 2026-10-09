@@ -20,14 +20,22 @@ export const reportsService = {
 
   downloadExcel: async (params?: Record<string, any>): Promise<Blob> => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const res = await fetch(`/api/v1/reports/exports/excel/${qs}`, {
+    const res = await fetch(`/api/v1/reports/export/excel/${qs}`, {
       credentials: 'include',
     });
     return res.blob();
   },
 
-  downloadPdf: async (traderId: string): Promise<Blob> => {
-    const res = await fetch(`/api/v1/reports/exports/pdf/${traderId}/`, {
+  downloadCsv: async (params?: Record<string, any>): Promise<Blob> => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    const res = await fetch(`/api/v1/reports/export/csv/${qs}`, {
+      credentials: 'include',
+    });
+    return res.blob();
+  },
+
+  downloadPdf: async (traderId: string, lang = 'en'): Promise<Blob> => {
+    const res = await fetch(`/api/v1/reports/certificate/${traderId}/pdf/?lang=${lang}`, {
       credentials: 'include',
     });
     return res.blob();
