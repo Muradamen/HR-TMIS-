@@ -113,6 +113,11 @@ class TraderViewSet(viewsets.ModelViewSet):
             elif user.role == 'DIRECTOR' or user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists():
                 if user.assigned_woreda_id:
                     qs = qs.filter(woreda_id=user.assigned_woreda_id)
+                assignment = params.get('assignment')
+                if assignment == 'MINE':
+                    qs = qs.filter(assigned_director=user)
+                elif assignment == 'UNASSIGNED':
+                    qs = qs.filter(assigned_director__isnull=True)
 
         return qs
 
