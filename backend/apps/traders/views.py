@@ -54,6 +54,8 @@ class TraderViewSet(viewsets.ModelViewSet):
         ).all()
 
         params = self.request.query_params
+        if not params.get('status') or params.get('status') == 'ALL':
+            qs = qs.exclude(status='ARCHIVED')
 
         # Specific IDs list if provided
         ids = params.get('ids')
