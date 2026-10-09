@@ -353,14 +353,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteTrader = (traderId: string) => {
-    setTraders(prev => prev.filter(t => t.traderId !== traderId));
-
     traderService.deleteTrader(traderId)
-      .then(() => {
-        showAlert('danger', `Trader ${traderId} deleted from PostgreSQL registry.`);
+      .then(archivedTrader => {
+        setTraders(prev => prev.map(t => t.traderId === traderId ? archivedTrader : t));
+        showAlert('success', `Trader ${traderId} archived; its audit history is retained.`);
       })
       .catch((err: ApiError) => {
-        showAlert('danger', err.message || `Failed to delete trader ${traderId}`);
+        showAlert('danger', err.message || `Failed to archive trader ${traderId}`);
         refreshAuthoritativeData();
       });
   };
