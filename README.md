@@ -40,16 +40,18 @@ Full native support across three official regional languages:
 
 ## Harari Administrative Locations
 
-Official administrative hierarchy with strict server-side validation:
+Official active administrative hierarchy: Region → Woreda → Kebele. Woreda is location/reference data, not a user or role.
+
 1. Amir Nur (`AN-01`)
 2. Abadir (`AB-02`)
 3. Shenkor (`SH-03`)
 4. Jin'Eala (`JN-04`)
-5. Aboker (`AK-05`)
-6. Hakim (`HK-06`)
-7. Sofi (`SF-07`)
-8. Erer (`ER-08`)
-9. Dire Teyyara (`DT-09`)
+5. Hakim (`HK-06`)
+6. Sofi (`SF-07`)
+7. Erer (`ER-08`)
+8. Dire Teyara (`DT-09`)
+
+Legacy Aboker records are retained for historical trader links but the Woreda is inactive in the current reference list.
 
 ## Running the Application
 
