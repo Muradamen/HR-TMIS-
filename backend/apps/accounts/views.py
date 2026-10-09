@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import UserSerializer, LoginSerializer
 from apps.core.permissions import IsAdministrator
+from apps.audit.models import AuditLog
 
 User = get_user_model()
 LOGIN_FAILURE_LIMIT = 8
@@ -36,6 +37,7 @@ class LoginView(APIView):
         cache.delete(key)
         login(request, user)
         request.session.set_expiry(1800)
+        AuditLog.objects.create(action='LOGIN', details='Successful login', user=user.username, ip_address=request.META.get('REMOTE_ADDR') or None)
         return Response({'message': 'Login successful.', 'user': UserSerializer(user).data})
 
 
@@ -43,6 +45,8 @@ class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        username = request.user.username
+        AuditLog.objects.create(action='LOGOUT', details='User logged out', user=username, ip_address=request.META.get('REMOTE_ADDR') or None)
         logout(request)
         response = Response({'message': 'Logged out successfully.'})
         response.delete_cookie('sessionid', samesite='Lax')
