@@ -9,13 +9,6 @@ import {
   InformalTraderDetails,
   TraderStatus
 } from '../types';
-import { 
-  SEED_TRADERS, 
-  SEED_WOREDAS, 
-  SEED_KEBELES, 
-  SEED_USERS, 
-  SEED_AUDIT_LOGS 
-} from '../data/seedData';
 import { traderService } from '../services/trader.service';
 import { locationService } from '../services/location.service';
 import { verificationService } from '../services/verification.service';
@@ -63,16 +56,10 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 // LocalStorage is strictly reserved for non-authoritative UI preferences
 const UI_STORAGE_KEYS = {
-  CURRENT_USER: 'hr_tmis_user_v1',
   RECENT_SEARCHES: 'hr_tmis_recent_searches_v1',
 };
 
-const DEFAULT_USER_RECENT_SEARCHES: Record<number, string[]> = {
-  1: ['HTT-000001', 'HTT-000002', 'HTT-000003'], // Murad Amen (Data Encoder)
-  2: ['HTT-000001', 'HTT-000005', 'HTT-000006'], // Dr. Ahmed Hassen (Director)
-  3: ['HTT-000006', 'HTT-000002'],               // Fatuma Ali (Agency Leader)
-  4: ['HTT-000001', 'HTT-000002', 'HTT-000004'], // System Administrator
-};
+const DEFAULT_USER_RECENT_SEARCHES: Record<number, string[]> = {};
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -86,7 +73,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [woredas, setWoredas] = useState<Woreda[]>([]);
   const [kebeles, setKebeles] = useState<Kebele[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users] = useState<User[]>([]);
 
   const [userRecentSearches, setUserRecentSearches] = useState<Record<number, string[]>>(() => {
     try {
