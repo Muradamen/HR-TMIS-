@@ -12,7 +12,7 @@ from apps.traders.models import Trader, LegalTrader, InformalTrader
 from apps.formalization.models import FormalizationAssessment
 from apps.locations.models import Woreda, Kebele, Region
 from apps.audit.models import AuditLog
-from apps.core.permissions import IsReportExporter, IsOversightReporter
+from apps.core.permissions import IsReportExporter
 
 # Import openpyxl for Excel export
 import openpyxl
