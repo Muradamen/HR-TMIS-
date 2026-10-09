@@ -19,7 +19,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const totalTraders = traders.length;
   const legalTraders = traders.filter(t => t.traderType === 'LEGAL');
   const informalTraders = traders.filter(t => t.traderType === 'INFORMAL');
-  const pendingTraders = traders.filter(t => t.status === 'PENDING');
+  const pendingTraders = traders.filter(t => ['PENDING', 'SUBMITTED', 'UNDER_REVIEW'].includes(t.status));
   const approvedTraders = traders.filter(t => t.status === 'APPROVED');
   const returnedTraders = traders.filter(t => t.status === 'RETURNED');
 
