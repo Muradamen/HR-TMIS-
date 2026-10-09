@@ -13,6 +13,19 @@ class FormalizationViewSet(viewsets.ModelViewSet):
     serializer_class = FormalizationAssessmentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        queryset = FormalizationAssessment.objects.select_related(
+            'trader', 'assigned_mentor', 'assessed_by'
+        ).all()
+        user = self.request.user
+        if (
+            user.is_authenticated
+            and (user.role == 'DIRECTOR' or user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists())
+            and user.assigned_woreda_id
+        ):
+            queryset = queryset.filter(trader__woreda_id=user.assigned_woreda_id)
+        return queryset
+
     def get_permissions(self):
         if self.action in ('create', 'update', 'partial_update', 'destroy', 'assess_trader'):
             classes = [IsDirector]
