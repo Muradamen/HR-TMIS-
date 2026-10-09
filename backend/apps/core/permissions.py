@@ -72,15 +72,6 @@ class IsReportExporter(permissions.BasePermission):
         )
 
 
-class IsOversightReporter(permissions.BasePermission):
-    """Dashboard-wide statistics are limited to Directors and Agency Leaders."""
-    def has_permission(self, request, view):
-        return (
-            IsDirector().has_permission(request, view) or
-            IsAgencyLeader().has_permission(request, view)
-        )
-
-
 class IsTraderReadAllowed(permissions.BasePermission):
     """Only known operational and oversight roles may query trader records."""
     def has_permission(self, request, view):
