@@ -221,8 +221,8 @@ class HTTMISIntegrationTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_multilingual_csv_export(self):
-        """CSV export supports en, om, am with UTF-8 BOM."""
-        self.client.force_authenticate(user=self.encoder)
+        """CSV export supports en, om, am with UTF-8 BOM for an authorized Director."""
+        self.client.force_authenticate(user=self.director)
 
         for lang in ['en', 'om', 'am']:
             res = self.client.get(f'/api/v1/reports/export/csv/?lang={lang}')
@@ -230,8 +230,8 @@ class HTTMISIntegrationTests(TestCase):
             self.assertTrue(res.content.startswith(b'\xef\xbb\xbf')) # UTF-8 BOM
 
     def test_excel_export(self):
-        """Excel export generates valid XLSX file."""
-        self.client.force_authenticate(user=self.encoder)
+        """Excel export generates valid XLSX file for an authorized Director."""
+        self.client.force_authenticate(user=self.director)
         res = self.client.get('/api/v1/reports/export/excel/?lang=en')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(
