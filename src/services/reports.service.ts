@@ -21,6 +21,15 @@ function getActiveLanguage(): string {
   }
 }
 
+function getCsrfToken(): string | null {
+  const name = 'csrftoken';
+  const cookieValue = document.cookie
+    .split('; ')
+    .find(row => row.startsWith(name + '='))
+    ?.split('=')[1];
+  return cookieValue || null;
+}
+
 export function triggerBlobDownload(blob: Blob, fallbackFilename: string, contentDisposition?: string | null) {
   let filename = fallbackFilename;
   if (contentDisposition) {
@@ -69,11 +78,13 @@ export const reportsService = {
 
   // Export Selected to Excel
   exportSelectedExcel: async (ids: string[], lang = getActiveLanguage()): Promise<Blob> => {
+    const csrf = getCsrfToken();
     const res = await fetch('/api/v1/reports/export/excel/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept-Language': lang,
+        ...(csrf ? { 'X-CSRFToken': csrf } : {}),
       },
       credentials: 'include',
       body: JSON.stringify({ ids, lang, scope: 'selected' }),
@@ -83,11 +94,13 @@ export const reportsService = {
 
   // Export Selected to PDF
   exportSelectedPdf: async (ids: string[], lang = getActiveLanguage()): Promise<Blob> => {
+    const csrf = getCsrfToken();
     const res = await fetch('/api/v1/reports/export/pdf/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept-Language': lang,
+        ...(csrf ? { 'X-CSRFToken': csrf } : {}),
       },
       credentials: 'include',
       body: JSON.stringify({ ids, lang, scope: 'selected' }),
@@ -97,11 +110,13 @@ export const reportsService = {
 
   // Export All Filtered to Excel
   exportFilteredExcel: async (filters: Record<string, any>, lang = getActiveLanguage()): Promise<Blob> => {
+    const csrf = getCsrfToken();
     const res = await fetch('/api/v1/reports/export/excel/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept-Language': lang,
+        ...(csrf ? { 'X-CSRFToken': csrf } : {}),
       },
       credentials: 'include',
       body: JSON.stringify({ ...filters, lang, scope: 'filtered' }),
@@ -111,11 +126,13 @@ export const reportsService = {
 
   // Export All Filtered to PDF
   exportFilteredPdf: async (filters: Record<string, any>, lang = getActiveLanguage()): Promise<Blob> => {
+    const csrf = getCsrfToken();
     const res = await fetch('/api/v1/reports/export/pdf/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept-Language': lang,
+        ...(csrf ? { 'X-CSRFToken': csrf } : {}),
       },
       credentials: 'include',
       body: JSON.stringify({ ...filters, lang, scope: 'filtered' }),

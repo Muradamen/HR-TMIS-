@@ -1,10 +1,30 @@
 import { api } from './api';
 import { Trader, LegalTraderDetails, InformalTraderDetails } from '../types';
 
+export interface PaginatedTradersResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Trader[];
+}
+
 export const traderService = {
   getTraders: async (params?: Record<string, any>): Promise<Trader[]> => {
     const res = await api.get('/traders/', params);
     return Array.isArray(res) ? res : (res?.results || []);
+  },
+
+  getPaginatedTraders: async (params?: Record<string, any>): Promise<PaginatedTradersResponse> => {
+    const res = await api.get('/traders/', params);
+    if (Array.isArray(res)) {
+      return { count: res.length, next: null, previous: null, results: res };
+    }
+    return {
+      count: res?.count ?? (res?.results?.length || 0),
+      next: res?.next || null,
+      previous: res?.previous || null,
+      results: res?.results || [],
+    };
   },
 
   getTraderById: async (traderId: string): Promise<Trader> => {

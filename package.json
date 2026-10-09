@@ -3,25 +3,28 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node scripts/start-dev.js",
+    "dev": "tsx server.ts",
     "build": "tsc && vite build",
+    "start": "tsx server.ts",
     "lint": "tsc --noEmit",
-    "preview": "vite preview --host 0.0.0.0 --port 3000",
-    "test:backend": "python3 backend/manage.py test apps.traders"
+    "preview": "vite preview --host 0.0.0.0 --port 3000"
   },
   "dependencies": {
     "admin-lte": "^4.10.0",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
+    "express": "^5.3.0",
     "overlayscrollbars": "^2.16.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^26.6.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.4"
   }

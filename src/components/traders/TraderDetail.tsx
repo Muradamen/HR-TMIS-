@@ -40,10 +40,7 @@ export const TraderDetail: React.FC<TraderDetailProps> = ({
   const legal = trader.legalDetails;
   const informal = trader.informalDetails;
 
-  const isVerifier =
-    currentUser.role === 'DIRECTOR' ||
-    currentUser.role === 'AGENCY_LEADER' ||
-    currentUser.role === 'SYSTEM_ADMINISTRATOR';
+  const isVerifier = currentUser.role === 'DIRECTOR';
 
   const handleOpenVerify = (status: 'APPROVED' | 'RETURNED') => {
     setPendingStatus(status);
