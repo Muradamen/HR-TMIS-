@@ -256,6 +256,28 @@ class HTTMISIntegrationTests(TestCase):
             self.assertEqual(res.status_code, status.HTTP_200_OK)
             self.assertTrue(res.content.startswith(b'\xef\xbb\xbf')) # UTF-8 BOM
 
+    def test_encoder_export_is_scoped_to_records_they_created(self):
+        Trader.objects.create(
+            trader_id='HTT-ENCODER-OWN-01', trader_type='LEGAL', status='APPROVED',
+            name='Encoder Own Trader', owner_full_name='Own Owner',
+            woreda=self.woreda_an, kebele=self.kebele_an1, created_by=self.encoder,
+        )
+        other_encoder = User.objects.create_user(
+            username='encoder2', password='Strong-Test-Password-2026!',
+            full_name='Other Encoder', role='DATA_ENCODER',
+        )
+        Trader.objects.create(
+            trader_id='HTT-ENCODER-OTHER-01', trader_type='LEGAL', status='APPROVED',
+            name='Other Officer Trader', owner_full_name='Other Owner',
+            woreda=self.woreda_ab, kebele=self.kebele_ab4, created_by=other_encoder,
+        )
+        self.client.force_authenticate(user=self.encoder)
+        response = self.client.get('/api/v1/reports/export/csv/?lang=en')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        exported = response.content.decode('utf-8-sig')
+        self.assertIn('HTT-ENCODER-OWN-01', exported)
+        self.assertNotIn('HTT-ENCODER-OTHER-01', exported)
+
     def test_excel_export(self):
         """Excel export generates valid XLSX file for an authorized Director."""
         Trader.objects.create(
