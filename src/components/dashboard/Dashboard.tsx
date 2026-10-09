@@ -47,6 +47,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </p>
         </div>
         <div className="d-flex gap-2">
+          {currentUser.role === 'DATA_ENCODER' && (
           <button
             className="btn btn-primary d-flex align-items-center gap-2 shadow-sm"
             onClick={onOpenRegisterType}
@@ -54,6 +55,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <i className="bi bi-plus-lg"></i>
             <span>{t('nav.registerTrader', 'Register Trader')}</span>
           </button>
+          )}
         </div>
       </div>
 
