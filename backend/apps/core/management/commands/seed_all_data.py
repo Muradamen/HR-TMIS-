@@ -95,17 +95,22 @@ class Command(BaseCommand):
             ('Abadir', 'AB-02', [('Kebele 04 (Gedir Shingir)', 'AB-K04'), ('Kebele 05 (Feres Magala)', 'AB-K05')]),
             ('Shenkor', 'SH-03', [('Kebele 06 (Shenkor Center)', 'SH-K06'), ('Kebele 07 (Bete-Mekdes)', 'SH-K07')]),
             ("Jin'Eala", 'JN-04', [("Kebele 08 (Jin'Eala Upper)", 'JN-K08'), ("Kebele 09 (Jin'Eala Lower)", 'JN-K09')]),
-            ('Aboker', 'AK-05', [('Kebele 10 (Aboker North)', 'AK-K10'), ('Kebele 11 (Aboker South)', 'AK-K11')]),
             ('Hakim', 'HK-06', [('Kebele 12 (Hakim Mountain Gate)', 'HK-K12'), ('Kebele 13 (Arategna)', 'HK-K13')]),
             ('Sofi', 'SF-07', [('Kebele 14 (Sofi Rural Commercial Center)', 'SF-K14'), ('Kebele 15 (Aw-Umer)', 'SF-K15')]),
             ('Erer', 'ER-08', [('Kebele 16 (Erer Guda)', 'ER-K16'), ('Kebele 17 (Erer Tiya)', 'ER-K17')]),
-            ('Dire Teyyara', 'DT-09', [('Kebele 18 (Hasengey)', 'DT-K18'), ('Kebele 19 (Qile)', 'DT-K19')]),
+            ('Dire Teyara', 'DT-09', [('Kebele 18 (Hasengey)', 'DT-K18'), ('Kebele 19 (Qile)', 'DT-K19')]),
         ]
 
+        # Keep legacy Aboker-linked records intact but exclude that obsolete Woreda from active choices.
+        Woreda.objects.filter(name__iexact='Aboker').update(is_active=False)
         w_map = {}
         k_map = {}
         for w_name, w_code, kebeles in woredas_data:
-            woreda, _ = Woreda.objects.get_or_create(name=w_name, defaults={'code': w_code, 'region': region})
+            woreda, _ = Woreda.objects.get_or_create(code=w_code, region=region, defaults={'name': w_name, 'is_active': True})
+            if woreda.name != w_name or not woreda.is_active:
+                woreda.name = w_name
+                woreda.is_active = True
+                woreda.save(update_fields=['name', 'is_active'])
             w_map[w_name] = woreda
             for k_name, k_code in kebeles:
                 kebele, _ = Kebele.objects.get_or_create(woreda=woreda, code=k_code, defaults={'name': k_name})
@@ -123,8 +128,6 @@ class Command(BaseCommand):
         k_sh6 = k_map['Shenkor_SH-K06']
         w_jn = w_map["Jin'Eala"]
         k_jn8 = k_map["Jin'Eala_JN-K08"]
-        w_ak = w_map['Aboker']
-        k_ak10 = k_map['Aboker_AK-K10']
         w_hk = w_map['Hakim']
         k_hk12 = k_map['Hakim_HK-K12']
 
@@ -276,9 +279,9 @@ class Command(BaseCommand):
                 name='Harar Pure Honey & Wax Processing',
                 owner_full_name='Kedir Abdi Yusuf',
                 phone_number='+251 91 566 8201',
-                woreda=w_ak,
-                kebele=k_ak10,
-                specific_location='House #512, Aboker Old Town',
+                woreda=w_hk,
+                kebele=k_hk12,
+                specific_location='House #512, Hakim Old Town',
                 created_by=encoder,
                 assigned_director=director,
                 correction_remarks='Attached commercial lease contract is expired. Please submit an updated lease agreement.',
