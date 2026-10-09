@@ -16,8 +16,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const {
     currentUser,
-    users,
-    setCurrentUser,
     traders,
     getWoredaName,
     getKebeleName,
@@ -523,28 +521,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </li>
             <li><hr className="dropdown-divider" /></li>
-            <li className="dropdown-header text-uppercase small fw-bold">{t('nav.switchUser', 'Switch Role / User')}</li>
-            {users.map(u => (
-              <li key={u.id}>
-                <button
-                  className={`dropdown-item d-flex align-items-center justify-content-between py-2 ${
-                    u.id === currentUser.id ? 'active' : ''
-                  }`}
-                  onClick={() => {
-                    setCurrentUser(u);
-                    setIsUserOpen(false);
-                  }}
-                >
-                  <div>
-                    <div className="fw-medium">{u.fullName}</div>
-                    <small className={u.id === currentUser.id ? 'text-white-50' : 'text-muted'}>
-                      {t(`role.${u.role}`, u.role.replace(/_/g, ' '))}
-                    </small>
-                  </div>
-                  {u.id === currentUser.id && <i className="bi bi-check-lg ms-2"></i>}
-                </button>
-              </li>
-            ))}
             <li><hr className="dropdown-divider" /></li>
             <li>
               <button
