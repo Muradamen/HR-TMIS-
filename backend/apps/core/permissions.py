@@ -2,11 +2,14 @@ from rest_framework import permissions
 
 class IsDataEncoder(permissions.BasePermission):
     def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if user.role == 'SYSTEM_ADMINISTRATOR' or user.groups.filter(name='ADMINISTRATOR').exists():
+            return False
         return bool(
-            request.user and request.user.is_authenticated and (
-                request.user.role == 'DATA_ENCODER' or 
-                request.user.groups.filter(name='DATA_ENCODER').exists()
-            )
+            user.role == 'DATA_ENCODER' or
+            user.groups.filter(name='DATA_ENCODER').exists()
         )
 
 class IsDirector(permissions.BasePermission):
@@ -60,10 +63,14 @@ class IsReportExporter(permissions.BasePermission):
     """Exports contain bulk personal/business data; limit them to oversight/review roles."""
     def has_permission(self, request, view):
         user = request.user
-        return bool(user and user.is_authenticated and (
+        if not user or not user.is_authenticated:
+            return False
+        if user.role == 'SYSTEM_ADMINISTRATOR' or user.groups.filter(name='ADMINISTRATOR').exists():
+            return False
+        return bool(
             user.role in ('DIRECTOR', 'AGENCY_LEADER') or
             user.groups.filter(name__in=('DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER')).exists()
-        ))
+        )
 
 
 class IsFormalizationReader(permissions.BasePermission):
