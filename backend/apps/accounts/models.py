@@ -1,8 +1,16 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
+
+
+class HTTMISUserManager(UserManager):
+    def create_superuser(self, username, email=None, password=None, **extra_fields):
+        extra_fields.setdefault('role', 'SYSTEM_ADMINISTRATOR')
+        return super().create_superuser(username, email, password, **extra_fields)
 from django.utils.translation import gettext_lazy as _
 
 class User(AbstractUser):
+    objects = HTTMISUserManager()
+
     ROLE_CHOICES = [
         ('DATA_ENCODER', _('Data Encoder')),
         ('DIRECTOR', _('Director of Trader Control')),
