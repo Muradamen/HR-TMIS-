@@ -127,7 +127,7 @@ class VerificationDecisionView(APIView):
         return Response(TraderSerializer(trader).data)
 
 class VerificationHistoryView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [CanApproveTrader]
 
     def get(self, request, trader_id):
         try:
