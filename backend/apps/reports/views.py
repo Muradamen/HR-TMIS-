@@ -12,7 +12,7 @@ from apps.traders.models import Trader, LegalTrader, InformalTrader
 from apps.formalization.models import FormalizationAssessment
 from apps.locations.models import Woreda, Kebele, Region
 from apps.audit.models import AuditLog
-from apps.core.permissions import IsReportExporter
+from apps.core.permissions import IsReportExporter, IsOversightReporter
 
 # Import openpyxl for Excel export
 import openpyxl
@@ -180,7 +180,11 @@ def get_filtered_traders_queryset(request):
 
     # Apply role/territory restrictions before any client-supplied filters or selected IDs.
     user = request.user
-    if user.role == 'DIRECTOR' or user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists():
+    if user.role == 'DATA_ENCODER' or user.groups.filter(name='DATA_ENCODER').exists():
+        queryset = queryset.filter(created_by=user)
+        if user.assigned_woreda_id:
+            queryset = queryset.filter(woreda_id=user.assigned_woreda_id)
+    elif user.role == 'DIRECTOR' or user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists():
         if user.assigned_woreda_id:
             queryset = queryset.filter(woreda_id=user.assigned_woreda_id)
     elif user.role != 'AGENCY_LEADER' and not user.groups.filter(name='AGENCY_LEADER').exists():
@@ -301,7 +305,7 @@ def get_filtered_traders_queryset(request):
 
 
 class DashboardStatsView(APIView):
-    permission_classes = [IsReportExporter]
+    permission_classes = [IsOversightReporter]
 
     def get(self, request):
         traders = Trader.objects.all()
