@@ -20,7 +20,7 @@ class TraderViewSet(viewsets.ModelViewSet):
     serializer_class = TraderSerializer
     lookup_field = 'trader_id'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'trader_type', 'woreda', 'kebele']
+    filterset_fields = ['trader_type', 'woreda', 'kebele']
     search_fields = [
         'trader_id',
         'name',
@@ -68,6 +68,17 @@ class TraderViewSet(viewsets.ModelViewSet):
         trader_type = params.get('type') or params.get('trader_type')
         if trader_type and trader_type != 'ALL':
             qs = qs.filter(trader_type=trader_type)
+
+        status_filter = params.get('status')
+        if status_filter and status_filter != 'ALL':
+            if status_filter == 'PENDING':
+                qs = qs.filter(status__in=['SUBMITTED', 'UNDER_REVIEW'])
+            elif status_filter == 'RETURNED':
+                qs = qs.filter(status__in=['RETURNED', 'NEEDS_CORRECTION'])
+            else:
+                qs = qs.filter(status=status_filter)
+        else:
+            qs = qs.exclude(status='ARCHIVED')
 
         # Region
         region = params.get('region')
