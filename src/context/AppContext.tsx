@@ -39,6 +39,7 @@ interface AppContextType {
   showAlert: (type: AppAlert['type'], message: string) => void;
   dismissAlert: () => void;
   getTraderById: (traderId: string) => Trader | undefined;
+  cacheTraders: (items: Trader[]) => void;
   getWoredaName: (woredaId: number) => string;
   getKebeleName: (kebeleId: number) => string;
   registerLegalTrader: (details: LegalTraderDetails) => string;
@@ -176,6 +177,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     const nextNum = maxId + 1;
     return `HTT-${nextNum.toString().padStart(6, '0')}`;
+  };
+
+  const cacheTraders = (items: Trader[]) => {
+    setTraders(prev => {
+      const byId = new Map(prev.map(trader => [trader.traderId, trader]));
+      items.forEach(trader => byId.set(trader.traderId, trader));
+      return Array.from(byId.values());
+    });
   };
 
   const getTraderById = (traderId: string) => {
@@ -442,6 +451,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         showAlert,
         dismissAlert,
         getTraderById,
+        cacheTraders,
         getWoredaName,
         getKebeleName,
         registerLegalTrader,
