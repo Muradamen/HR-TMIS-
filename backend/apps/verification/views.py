@@ -12,7 +12,7 @@ from .models import VerificationLog
 from .serializers import VerificationDecisionSerializer, VerificationLogSerializer
 
 class VerificationQueueView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsDirector]
 
     def get(self, request):
         status_filter = request.query_params.get('status', 'SUBMITTED')
@@ -30,6 +30,9 @@ class VerificationClaimView(APIView):
                 trader = Trader.objects.select_for_update().get(trader_id=trader_id)
             except Trader.DoesNotExist:
                 return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+            if trader.status not in ('SUBMITTED', 'UNDER_REVIEW'):
+                return Response({'detail': 'Only submitted records can be claimed.'}, status=status.HTTP_409_CONFLICT)
 
             if trader.assigned_director and trader.assigned_director != request.user:
                 return Response(
@@ -72,6 +75,13 @@ class VerificationDecisionView(APIView):
                 trader = Trader.objects.select_for_update().get(trader_id=trader_id)
             except Trader.DoesNotExist:
                 return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+            if new_status not in ('APPROVED', 'REJECTED', 'RETURNED', 'NEEDS_CORRECTION'):
+                return Response({'detail': 'Unsupported verification decision.'}, status=status.HTTP_400_BAD_REQUEST)
+            if trader.status not in ('SUBMITTED', 'UNDER_REVIEW'):
+                return Response({'detail': 'Only submitted or under-review records can receive a decision.'}, status=status.HTTP_409_CONFLICT)
+            if trader.assigned_director_id and trader.assigned_director_id != request.user.id:
+                return Response({'detail': 'This record is assigned to another director.'}, status=status.HTTP_403_FORBIDDEN)
 
             # Self-approval guard: Submitting officer cannot approve their own record
             if trader.created_by == request.user:
