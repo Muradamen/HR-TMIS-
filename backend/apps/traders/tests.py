@@ -27,19 +27,19 @@ class HTTMISIntegrationTests(TestCase):
         # Users
         self.encoder = User.objects.create_user(
             username='encoder1',
-            password='password123',
+            password='Strong-Test-Password-2026!',
             full_name='Abebe Data Encoder',
             role='DATA_ENCODER'
         )
         self.director = User.objects.create_user(
             username='director1',
-            password='password123',
+            password='Strong-Test-Password-2026!',
             full_name='Dr. Kebede Director',
             role='DIRECTOR'
         )
         self.admin = User.objects.create_user(
             username='admin1',
-            password='password123',
+            password='Strong-Test-Password-2026!',
             full_name='System Admin',
             role='SYSTEM_ADMINISTRATOR',
             is_staff=True
