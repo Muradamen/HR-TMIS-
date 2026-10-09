@@ -47,7 +47,7 @@ export const traderService = {
     return api.post(`/traders/${traderId}/update-informal/`, details);
   },
 
-  deleteTrader: async (traderId: string): Promise<void> => {
+  deleteTrader: async (traderId: string): Promise<Trader> => {
     return api.delete(`/traders/${traderId}/`);
   },
 
