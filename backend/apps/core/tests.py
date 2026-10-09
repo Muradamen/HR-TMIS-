@@ -31,6 +31,9 @@ class RolePermissionTests(TestCase):
             username='admin-test', email='admin@example.test', password='Safe-Test-Pass-2026!',
             role='SYSTEM_ADMINISTRATOR',
         )
+        self.superuser = User.objects.create_superuser(
+            username='superuser-test', email='superuser@example.test', password='Strong-Superuser-Test-2026!',
+        )
 
     def allowed(self, permission, user):
         request = self.factory.get('/')
@@ -59,6 +62,9 @@ class RolePermissionTests(TestCase):
     def test_administrator_does_not_inherit_verification_permission(self):
         self.assertTrue(self.allowed(IsAdministrator, self.admin))
         self.assertFalse(self.allowed(CanApproveTrader, self.admin))
+        self.assertTrue(self.allowed(IsAdministrator, self.superuser))
+        self.assertFalse(self.allowed(CanApproveTrader, self.superuser))
+        self.assertFalse(self.allowed(IsReportExporter, self.superuser))
         self.director.is_staff = True
         self.director.save(update_fields=['is_staff'])
         self.assertFalse(self.allowed(IsAdministrator, self.director))
