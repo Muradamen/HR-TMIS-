@@ -18,7 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const legalCount = traders.filter(t => t.traderType === 'LEGAL').length;
   const informalCount = traders.filter(t => t.traderType === 'INFORMAL').length;
-  const pendingCount = traders.filter(t => t.status === 'PENDING').length;
+  const pendingCount = traders.filter(t => ['PENDING', 'SUBMITTED', 'UNDER_REVIEW'].includes(t.status)).length;
 
   return (
     <aside className="app-sidebar shadow">
