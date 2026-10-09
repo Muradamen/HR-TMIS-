@@ -1,102 +1,119 @@
 from rest_framework import permissions
 
+
+def _authenticated(user):
+    return bool(user and user.is_authenticated)
+
+
+def _has_group(user, *names):
+    return user.groups.filter(name__in=names).exists()
+
+
 class IsDataEncoder(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
-        if not user or not user.is_authenticated:
+        if not _authenticated(user):
             return False
-        if user.role == 'SYSTEM_ADMINISTRATOR' or user.groups.filter(name='ADMINISTRATOR').exists():
+        if user.role in ('SYSTEM_ADMINISTRATOR', 'DIRECTOR', 'AGENCY_LEADER'):
             return False
-        return bool(
-            user.role == 'DATA_ENCODER' or
-            user.groups.filter(name='DATA_ENCODER').exists()
-        )
+        if _has_group(user, 'ADMINISTRATOR', 'DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER'):
+            return False
+        return user.role == 'DATA_ENCODER' or _has_group(user, 'DATA_ENCODER')
+
 
 class IsDirector(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
-        if not user or not user.is_authenticated:
+        if not _authenticated(user):
             return False
-        if user.role == 'SYSTEM_ADMINISTRATOR' or user.groups.filter(name='ADMINISTRATOR').exists():
+        if user.role in ('SYSTEM_ADMINISTRATOR', 'DATA_ENCODER', 'AGENCY_LEADER'):
             return False
-        return bool(
-            user.role == 'DIRECTOR' or
-            user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists()
-        )
+        if _has_group(user, 'ADMINISTRATOR', 'DATA_ENCODER', 'AGENCY_LEADER'):
+            return False
+        return user.role == 'DIRECTOR' or _has_group(user, 'DIRECTOR_OF_TRADER_CONTROL')
+
 
 class IsAdministrator(permissions.BasePermission):
     def has_permission(self, request, view):
-        return bool(
-            request.user and request.user.is_authenticated and (
-                request.user.role == 'SYSTEM_ADMINISTRATOR' or
-                request.user.groups.filter(name='ADMINISTRATOR').exists()
-            )
-        )
+        user = request.user
+        if not _authenticated(user):
+            return False
+        if user.role in ('DATA_ENCODER', 'DIRECTOR', 'AGENCY_LEADER'):
+            return False
+        if _has_group(user, 'DATA_ENCODER', 'DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER'):
+            return False
+        return user.role == 'SYSTEM_ADMINISTRATOR' or _has_group(user, 'ADMINISTRATOR')
+
 
 class IsAgencyLeader(permissions.BasePermission):
     def has_permission(self, request, view):
-        return bool(
-            request.user and request.user.is_authenticated and (
-                request.user.role == 'AGENCY_LEADER' or
-                request.user.groups.filter(name='AGENCY_LEADER').exists()
-            )
-        )
+        user = request.user
+        if not _authenticated(user):
+            return False
+        if user.role in ('SYSTEM_ADMINISTRATOR', 'DATA_ENCODER', 'DIRECTOR'):
+            return False
+        if _has_group(user, 'ADMINISTRATOR', 'DATA_ENCODER', 'DIRECTOR_OF_TRADER_CONTROL'):
+            return False
+        return user.role == 'AGENCY_LEADER' or _has_group(user, 'AGENCY_LEADER')
+
 
 class CanApproveTrader(permissions.BasePermission):
-    """
-    Only Director of Trader Control can approve, reject, or return traders.
-    Administrators and Data Encoders are strictly denied.
-    """
+    """Only the Director of Trader Control may decide workflow outcomes."""
     def has_permission(self, request, view):
-        if not (request.user and request.user.is_authenticated):
-            return False
-        if request.user.role == 'SYSTEM_ADMINISTRATOR' or request.user.groups.filter(name='ADMINISTRATOR').exists():
-            return False
-        return bool(
-            request.user.role == 'DIRECTOR' or
-            request.user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists()
-        )
+        return IsDirector().has_permission(request, view)
 
 
 class IsReportExporter(permissions.BasePermission):
-    """Exports contain bulk personal/business data; limit them to oversight/review roles."""
+    """Only Directors and Agency Leaders may export bulk trader data."""
     def has_permission(self, request, view):
         user = request.user
-        if not user or not user.is_authenticated:
+        if not _authenticated(user):
             return False
-        if user.role == 'SYSTEM_ADMINISTRATOR' or user.groups.filter(name='ADMINISTRATOR').exists():
+        if user.role in ('SYSTEM_ADMINISTRATOR', 'DATA_ENCODER'):
             return False
-        return bool(
+        if _has_group(user, 'ADMINISTRATOR', 'DATA_ENCODER'):
+            return False
+        return (
             user.role in ('DIRECTOR', 'AGENCY_LEADER') or
-            user.groups.filter(name__in=('DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER')).exists()
+            _has_group(user, 'DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER')
+        )
+
+
+class IsTraderReadAllowed(permissions.BasePermission):
+    """Only known operational and oversight roles may query trader records."""
+    def has_permission(self, request, view):
+        user = request.user
+        if not _authenticated(user):
+            return False
+        return (
+            user.role in ('DATA_ENCODER', 'DIRECTOR', 'AGENCY_LEADER', 'SYSTEM_ADMINISTRATOR') or
+            _has_group(user, 'DATA_ENCODER', 'DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER', 'ADMINISTRATOR')
         )
 
 
 class IsFormalizationReader(permissions.BasePermission):
-    """Allow review/oversight roles to read formalization records; never grants writes."""
+    """Directors and oversight roles may read formalization records."""
     def has_permission(self, request, view):
         user = request.user
-        return bool(user and user.is_authenticated and (
+        if not _authenticated(user):
+            return False
+        if user.role == 'DATA_ENCODER' or _has_group(user, 'DATA_ENCODER'):
+            return False
+        return (
             user.role in ('DIRECTOR', 'AGENCY_LEADER', 'SYSTEM_ADMINISTRATOR') or
-            user.groups.filter(name__in=('DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER', 'ADMINISTRATOR')).exists()
-        ))
-
-
-class IsTraderReadAllowed(permissions.BasePermission):
-    """Only operational and oversight roles may query trader records."""
-    def has_permission(self, request, view):
-        user = request.user
-        return bool(user and user.is_authenticated and (
-            user.role in ('DATA_ENCODER', 'DIRECTOR', 'AGENCY_LEADER', 'SYSTEM_ADMINISTRATOR') or
-            user.groups.filter(name__in=('DATA_ENCODER', 'DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER', 'ADMINISTRATOR')).exists()
-        ))
+            _has_group(user, 'DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER', 'ADMINISTRATOR')
+        )
 
 
 class IsAuditReader(permissions.BasePermission):
-    """Audit trails are limited to designated review and oversight roles."""
+    """Audit trails are limited to review and oversight roles."""
     def has_permission(self, request, view):
         user = request.user
-        return bool(user and user.is_authenticated and (
+        if not _authenticated(user):
+            return False
+        if user.role == 'DATA_ENCODER' or _has_group(user, 'DATA_ENCODER'):
+            return False
+        return (
             user.role in ('DIRECTOR', 'AGENCY_LEADER', 'SYSTEM_ADMINISTRATOR') or
-            user.groups.filter(name__in=('DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER', 'ADMINISTRATOR')).exists()
-        ))
+            _has_group(user, 'DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER', 'ADMINISTRATOR')
+        )
