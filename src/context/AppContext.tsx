@@ -179,13 +179,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return `HTT-${nextNum.toString().padStart(6, '0')}`;
   };
 
-  const cacheTraders = (items: Trader[]) => {
+  const cacheTraders = useCallback((items: Trader[]) => {
     setTraders(prev => {
       const byId = new Map(prev.map(trader => [trader.traderId, trader]));
       items.forEach(trader => byId.set(trader.traderId, trader));
       return Array.from(byId.values());
     });
-  };
+  }, []);
 
   const getTraderById = (traderId: string) => {
     return traders.find(t => t.traderId.toLowerCase() === traderId.toLowerCase());
