@@ -831,6 +831,13 @@ class CertificatePdfView(APIView):
         except Trader.DoesNotExist:
             return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+        if (
+            (request.user.role == 'DIRECTOR' or request.user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists())
+            and request.user.assigned_woreda_id
+            and trader.woreda_id != request.user.assigned_woreda_id
+        ):
+            return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
+
         # Enforce legal registration condition
         if trader.trader_type != 'LEGAL' or trader.status != 'APPROVED':
             return Response(
