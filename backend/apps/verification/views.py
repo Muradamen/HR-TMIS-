@@ -19,6 +19,8 @@ class VerificationQueueView(APIView):
         queryset = Trader.objects.filter(status=status_filter).select_related(
             'woreda', 'kebele', 'created_by', 'verified_by', 'legal_details', 'informal_details'
         )
+        if request.user.assigned_woreda_id:
+            queryset = queryset.filter(woreda_id=request.user.assigned_woreda_id)
         return Response(TraderSerializer(queryset, many=True).data)
 
 class VerificationClaimView(APIView):
@@ -30,6 +32,9 @@ class VerificationClaimView(APIView):
                 trader = Trader.objects.select_for_update().get(trader_id=trader_id)
             except Trader.DoesNotExist:
                 return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+            if request.user.assigned_woreda_id and trader.woreda_id != request.user.assigned_woreda_id:
+                return Response({'detail': 'This trader is outside your assigned Woreda.'}, status=status.HTTP_403_FORBIDDEN)
 
             if trader.status not in ('SUBMITTED', 'UNDER_REVIEW'):
                 return Response({'detail': 'Only submitted records can be claimed.'}, status=status.HTTP_409_CONFLICT)
@@ -64,7 +69,7 @@ class VerificationDecisionView(APIView):
         notes = serializer.validated_data.get('notes') or serializer.validated_data.get('reason') or ''
 
         # Rejection & Return require a mandatory justification reason
-        if new_status in ['RETURNED', 'REJECTED'] and not notes.strip():
+        if new_status in ['NEEDS_CORRECTION', 'REJECTED'] and not notes.strip():
             return Response(
                 {'detail': 'A mandatory explanatory reason is required for rejection or return.'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -76,8 +81,10 @@ class VerificationDecisionView(APIView):
             except Trader.DoesNotExist:
                 return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-            if new_status not in ('APPROVED', 'REJECTED', 'RETURNED', 'NEEDS_CORRECTION'):
+            if new_status not in ('APPROVED', 'REJECTED', 'NEEDS_CORRECTION'):
                 return Response({'detail': 'Unsupported verification decision.'}, status=status.HTTP_400_BAD_REQUEST)
+            if request.user.assigned_woreda_id and trader.woreda_id != request.user.assigned_woreda_id:
+                return Response({'detail': 'This trader is outside your assigned Woreda.'}, status=status.HTTP_403_FORBIDDEN)
             if trader.status not in ('SUBMITTED', 'UNDER_REVIEW'):
                 return Response({'detail': 'Only submitted or under-review records can receive a decision.'}, status=status.HTTP_409_CONFLICT)
             if trader.assigned_director_id and trader.assigned_director_id != request.user.id:
@@ -95,14 +102,14 @@ class VerificationDecisionView(APIView):
             trader.verified_at = timezone.now()
             trader.verification_notes = notes
 
-            if new_status == 'RETURNED':
+            if new_status == 'NEEDS_CORRECTION':
                 trader.correction_remarks = notes
             elif new_status == 'REJECTED':
                 trader.rejection_reason = notes
 
             trader.save()
 
-            action_type = 'APPROVE_TRADER' if new_status == 'APPROVED' else 'RETURN_TRADER'
+            action_type = 'APPROVE_TRADER' if new_status == 'APPROVED' else ('REJECT_TRADER' if new_status == 'REJECTED' else 'RETURN_TRADER')
             AuditLog.objects.create(
                 action=action_type,
                 trader_id=trader.trader_id,
@@ -113,7 +120,7 @@ class VerificationDecisionView(APIView):
             VerificationLog.objects.create(
                 trader=trader,
                 officer=request.user,
-                action='APPROVE' if new_status == 'APPROVED' else 'RETURN',
+                action='APPROVE' if new_status == 'APPROVED' else ('REJECT' if new_status == 'REJECTED' else 'RETURN'),
                 notes=notes,
             )
 
@@ -128,5 +135,7 @@ class VerificationHistoryView(APIView):
         except Trader.DoesNotExist:
             return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+        if request.user.assigned_woreda_id and trader.woreda_id != request.user.assigned_woreda_id and not (request.user.role == 'AGENCY_LEADER' or request.user.groups.filter(name='AGENCY_LEADER').exists()):
+            return Response({'detail': 'This trader is outside your assigned Woreda.'}, status=status.HTTP_403_FORBIDDEN)
         logs = VerificationLog.objects.filter(trader=trader).order_by('-timestamp')
         return Response(VerificationLogSerializer(logs, many=True).data)
