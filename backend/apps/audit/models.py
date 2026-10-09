@@ -12,6 +12,7 @@ class AuditLog(models.Model):
         ('REJECT_TRADER', _('Reject Trader')),
         ('FORMALIZE_TRADER', _('Formalize Trader')),
         ('DELETE_TRADER', _('Delete Trader')),
+        ('ARCHIVE_TRADER', _('Archive Trader')),
         ('EXPORT_CSV', _('Export CSV Data')),
         ('EXPORT_EXCEL', _('Export Excel Data')),
         ('EXPORT_PDF', _('Export PDF Report')),
