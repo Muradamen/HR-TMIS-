@@ -448,10 +448,12 @@ export const TradersList: React.FC<TradersListProps> = ({
             </ul>
           </div>
 
+          {currentUser.role === 'DATA_ENCODER' && (
           <button className="btn btn-primary d-flex align-items-center gap-1 shadow-sm" onClick={onOpenRegisterType}>
             <i className="bi bi-person-plus-fill"></i>
             <span>{t('nav.registerTrader', 'Register Trader')}</span>
           </button>
+          )}
         </div>
       </div>
 
