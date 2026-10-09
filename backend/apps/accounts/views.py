@@ -18,13 +18,14 @@ class LoginView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email'].strip().lower()
+        identifier = serializer.validated_data['username'].strip()
+        email = identifier.lower()
         password = serializer.validated_data['password']
         key = 'login-fail:' + str(request.META.get('REMOTE_ADDR', 'unknown')) + ':' + email
         if int(cache.get(key, 0)) >= LOGIN_FAILURE_LIMIT:
             return Response({'detail': 'Too many failed attempts. Try again later.'},
                             status=status.HTTP_429_TOO_MANY_REQUESTS)
-        candidate = User.objects.filter(email__iexact=email).first()
+        candidate = User.objects.filter(email__iexact=email).first() if '@' in identifier else User.objects.filter(username__iexact=identifier).first()
         user = authenticate(request, username=candidate.get_username(), password=password) if candidate else None
         if user is None or not user.is_active:
             cache.set(key, int(cache.get(key, 0)) + 1, LOGIN_LOCK_SECONDS)
