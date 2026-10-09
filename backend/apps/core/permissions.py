@@ -59,3 +59,13 @@ class IsReportExporter(permissions.BasePermission):
             user.role in ('DIRECTOR', 'AGENCY_LEADER') or
             user.groups.filter(name__in=('DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER')).exists()
         ))
+
+
+class IsFormalizationReader(permissions.BasePermission):
+    """Allow review/oversight roles to read formalization records; never grants writes."""
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and (
+            user.role in ('DIRECTOR', 'AGENCY_LEADER', 'SYSTEM_ADMINISTRATOR') or
+            user.groups.filter(name__in=('DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER', 'ADMINISTRATOR')).exists()
+        ))
