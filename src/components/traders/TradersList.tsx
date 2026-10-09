@@ -175,7 +175,7 @@ export const TradersList: React.FC<TradersListProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [page, pageSize, activeFilters, traders, debouncedSearch, typeFilter, statusFilter, woredaFilter, kebeleFilter, sectorFilter]);
+  }, [page, pageSize, activeFilters, traders, debouncedSearch, typeFilter, statusFilter, woredaFilter, kebeleFilter, sectorFilter, cacheTraders]);
 
   useEffect(() => {
     fetchTraders();
