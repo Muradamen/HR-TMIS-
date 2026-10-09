@@ -104,7 +104,15 @@ class VerificationDecisionView(APIView):
 
             trader.save()
 
-            action_type = 'APPROVE_TRADER' if new_status == 'APPROVED' else 'RETURN_TRADER'
+            if new_status == 'APPROVED':
+                action_type = 'APPROVE_TRADER'
+                verification_action = 'APPROVE'
+            elif new_status == 'REJECTED':
+                action_type = 'REJECT_TRADER'
+                verification_action = 'REJECT'
+            else:
+                action_type = 'RETURN_TRADER'
+                verification_action = 'RETURN'
             AuditLog.objects.create(
                 action=action_type,
                 trader_id=trader.trader_id,
@@ -115,7 +123,7 @@ class VerificationDecisionView(APIView):
             VerificationLog.objects.create(
                 trader=trader,
                 officer=request.user,
-                action='APPROVE' if new_status == 'APPROVED' else 'RETURN',
+                action=verification_action,
                 notes=notes,
             )
 
