@@ -394,6 +394,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrentUserState(user);
       setIsAuthenticated(true);
       setUserRecentSearches(prev => ({ ...prev, [user.id]: prev[user.id] || [] }));
+      await refreshAuthoritativeData();
       showAlert('success', `Welcome, ${user.fullName} (${user.role.replace(/_/g, ' ')})`);
       return { success: true, user };
     } catch (error: any) {
