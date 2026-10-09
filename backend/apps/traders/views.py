@@ -11,7 +11,7 @@ from .models import Trader, LegalTrader, InformalTrader
 from .serializers import TraderSerializer
 from apps.locations.models import Woreda, Kebele
 from apps.audit.models import AuditLog
-from apps.core.permissions import IsDataEncoder, IsAdministrator
+from apps.core.permissions import IsDataEncoder, IsAdministrator, IsDirector, IsAgencyLeader
 
 class TraderViewSet(viewsets.ModelViewSet):
     queryset = Trader.objects.select_related(
