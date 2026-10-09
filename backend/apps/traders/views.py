@@ -80,6 +80,16 @@ class TraderViewSet(viewsets.ModelViewSet):
                 Q(assigned_director__full_name__icontains=reviewer)
             )
 
+        user = self.request.user
+        if user.is_authenticated:
+            if user.role == 'DATA_ENCODER' or user.groups.filter(name='DATA_ENCODER').exists():
+                qs = qs.filter(created_by=user)
+                if user.assigned_woreda_id:
+                    qs = qs.filter(woreda_id=user.assigned_woreda_id)
+            elif user.role == 'DIRECTOR' or user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists():
+                if user.assigned_woreda_id:
+                    qs = qs.filter(woreda_id=user.assigned_woreda_id)
+
         return qs
 
     def generate_trader_id(self):
