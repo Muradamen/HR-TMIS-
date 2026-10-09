@@ -53,7 +53,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <ul className="nav flex-column">
           <li className="nav-header">{t('sidebar.mainMenu', 'Main Menu')}</li>
 
-          <li className="nav-item">
+          {currentUser.role !== 'SYSTEM_ADMINISTRATOR' && (
+<li className="nav-item">
             <button
               className={`nav-link w-100 text-start border-0 bg-transparent ${
                 currentView === 'dashboard' ? 'active' : ''
@@ -64,6 +65,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>{t('sidebar.dashboard', 'Dashboard Overview')}</span>
             </button>
           </li>
+)}
 
           <li className="nav-header">{t('sidebar.traderMgmt', 'Trader Management')}</li>
 
@@ -112,7 +114,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </li>
 
-          <li className="nav-item">
+          {currentUser.role === 'DIRECTOR' && (
+<li className="nav-item">
             <button
               className={`nav-link w-100 text-start border-0 bg-transparent justify-content-between ${
                 currentView === 'verification' ? 'active' : ''
@@ -128,7 +131,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </button>
           </li>
+)}
 
+          {currentUser.role === 'DATA_ENCODER' && (
           <li className="nav-header">{t('sidebar.registrationActions', 'Registration Actions')}</li>
 
           <li className="nav-item">
@@ -163,6 +168,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <i className="bi bi-file-earmark-person"></i>
               <span>{t('sidebar.informalAssessment', 'Informal Assessment')}</span>
             </button>
+          )}
+
           </li>
 
           <li className="nav-header">{t('sidebar.adminReports', 'Administration & Reports')}</li>
@@ -179,7 +186,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </li>
 
-          <li className="nav-item">
+          {currentUser.role !== 'SYSTEM_ADMINISTRATOR' && (
+<li className="nav-item">
             <button
               className={`nav-link w-100 text-start border-0 bg-transparent ${
                 currentView === 'reports' ? 'active' : ''
@@ -190,8 +198,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>{t('sidebar.reportsAnalytics', 'Reports & Analytics')}</span>
             </button>
           </li>
+)}
 
-          <li className="nav-item">
+          {currentUser.role !== 'DATA_ENCODER' && (
+<li className="nav-item">
             <button
               className={`nav-link w-100 text-start border-0 bg-transparent ${
                 currentView === 'audit' ? 'active' : ''
@@ -202,6 +212,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>{t('sidebar.auditTrail', 'Audit Trail')}</span>
             </button>
           </li>
+)}
         </ul>
       </div>
 
