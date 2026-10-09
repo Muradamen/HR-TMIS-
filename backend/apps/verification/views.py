@@ -9,7 +9,7 @@ from apps.traders.serializers import TraderSerializer
 from apps.audit.models import AuditLog
 from apps.core.permissions import CanApproveTrader, IsDirector, IsTraderReadAllowed
 from .models import VerificationLog
-from .serializers import VerificationDecisionSerializer, VerificationLogSerializer
+from .serializers import VerificationDecisionSerializer, VerificationLogSerializer, BulkApprovalSerializer
 
 class VerificationQueueView(APIView):
     permission_classes = [IsDirector]
@@ -141,6 +141,86 @@ class VerificationDecisionView(APIView):
             )
 
         return Response(TraderSerializer(trader).data)
+
+class BulkApprovalView(APIView):
+    """Approve a bounded batch atomically after validating every record."""
+    permission_classes = [CanApproveTrader]
+    MAX_BATCH_SIZE = 100
+
+    def post(self, request):
+        serializer = BulkApprovalSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        trader_ids = serializer.validated_data['trader_ids']
+        notes = serializer.validated_data.get('notes', '').strip()
+
+        if len(trader_ids) > self.MAX_BATCH_SIZE:
+            return Response(
+                {'detail': f'At most {self.MAX_BATCH_SIZE} records may be approved at once.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            locked = list(
+                Trader.objects.select_for_update().select_related(
+                    'woreda', 'kebele', 'created_by', 'assigned_director',
+                    'legal_details', 'informal_details',
+                ).filter(trader_id__in=trader_ids)
+            )
+            by_id = {trader.trader_id: trader for trader in locked}
+            if len(by_id) != len(trader_ids):
+                return Response(
+                    {'detail': 'One or more selected trader records were not found.'},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            ordered_traders = [by_id[trader_id] for trader_id in trader_ids]
+            for trader in ordered_traders:
+                if request.user.assigned_woreda_id and trader.woreda_id != request.user.assigned_woreda_id:
+                    return Response({'detail': 'One or more records are outside your assigned Woreda.'},
+                                    status=status.HTTP_404_NOT_FOUND)
+                if trader.status not in ('SUBMITTED', 'UNDER_REVIEW'):
+                    return Response(
+                        {'detail': f'{trader.trader_id} is not pending verification.'},
+                        status=status.HTTP_409_CONFLICT,
+                    )
+                if trader.assigned_director_id and trader.assigned_director_id != request.user.id:
+                    return Response(
+                        {'detail': f'{trader.trader_id} is assigned to another Director.'},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                if trader.created_by_id == request.user.id:
+                    return Response(
+                        {'detail': f'Conflict of interest: you cannot approve your own record ({trader.trader_id}).'},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
+            now = timezone.now()
+            for trader in ordered_traders:
+                trader.status = 'APPROVED'
+                trader.verified_by = request.user
+                trader.verified_at = now
+                trader.verification_notes = notes
+                trader.save(update_fields=[
+                    'status', 'verified_by', 'verified_at', 'verification_notes', 'updated_at',
+                ])
+                AuditLog.objects.create(
+                    action='APPROVE_TRADER',
+                    trader_id=trader.trader_id,
+                    details=f'Bulk approved. Notes: {notes}',
+                    user=request.user.username,
+                )
+                VerificationLog.objects.create(
+                    trader=trader,
+                    officer=request.user,
+                    action='APPROVE',
+                    notes=notes or 'Approved in bulk',
+                )
+
+        return Response({
+            'approved_count': len(ordered_traders),
+            'traders': TraderSerializer(ordered_traders, many=True).data,
+        })
+
 
 class VerificationHistoryView(APIView):
     permission_classes = [IsTraderReadAllowed]
