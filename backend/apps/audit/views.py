@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import AuditLog
 from .serializers import AuditLogSerializer
+from apps.core.permissions import IsReportExporter
 
 class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     """
