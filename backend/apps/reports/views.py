@@ -304,65 +304,82 @@ class DashboardStatsView(APIView):
     permission_classes = [IsReportExporter]
 
     def get(self, request):
-        total_traders = Trader.objects.count()
-        legal_count = Trader.objects.filter(trader_type='LEGAL').count()
-        informal_count = Trader.objects.filter(trader_type='INFORMAL').count()
+        traders = Trader.objects.all()
+        is_director = (
+            request.user.role == 'DIRECTOR' or
+            request.user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists()
+        )
+        if is_director and request.user.assigned_woreda_id:
+            traders = traders.filter(woreda_id=request.user.assigned_woreda_id)
 
-        pending_count = Trader.objects.filter(status='SUBMITTED').count()
-        under_review_count = Trader.objects.filter(status='UNDER_REVIEW').count()
-        approved_count = Trader.objects.filter(status='APPROVED').count()
-        returned_count = Trader.objects.filter(status__in=['NEEDS_CORRECTION', 'RETURNED']).count()
-        rejected_count = Trader.objects.filter(status='REJECTED').count()
+        total_traders = traders.count()
+        legal_count = traders.filter(trader_type='LEGAL').count()
+        informal_count = traders.filter(trader_type='INFORMAL').count()
+        pending_count = traders.filter(status='SUBMITTED').count()
+        under_review_count = traders.filter(status='UNDER_REVIEW').count()
+        approved_count = traders.filter(status='APPROVED').count()
+        returned_count = traders.filter(status__in=['NEEDS_CORRECTION', 'RETURNED']).count()
+        rejected_count = traders.filter(status='REJECTED').count()
 
-        # Breakdown by Woreda
         woredas = Woreda.objects.filter(is_active=True).order_by('name')
+        if is_director and request.user.assigned_woreda_id:
+            woredas = woredas.filter(id=request.user.assigned_woreda_id)
         distribution_by_woreda = []
-        for w in woredas:
-            w_total = Trader.objects.filter(woreda=w).count()
-            w_legal = Trader.objects.filter(woreda=w, trader_type='LEGAL').count()
-            w_informal = Trader.objects.filter(woreda=w, trader_type='INFORMAL').count()
+        woreda_distribution = {}
+        for woreda in woredas:
+            woreda_traders = traders.filter(woreda=woreda)
+            total = woreda_traders.count()
+            legal = woreda_traders.filter(trader_type='LEGAL').count()
+            informal = woreda_traders.filter(trader_type='INFORMAL').count()
             distribution_by_woreda.append({
-                'woredaId': w.id,
-                'woredaName': w.name,
-                'woredaCode': w.code,
-                'total': w_total,
-                'legal': w_legal,
-                'informal': w_informal,
+                'woredaId': woreda.id, 'woredaName': woreda.name, 'woredaCode': woreda.code,
+                'total': total, 'legal': legal, 'informal': informal,
             })
+            woreda_distribution[woreda.name] = total
 
-        # Breakdown by Sector (Legal)
         sector_counts = (
-            LegalTrader.objects.values('business_sector')
-            .annotate(count=Count('id'))
-            .order_by('-count')
+            LegalTrader.objects.filter(trader__in=traders)
+            .values('business_sector').annotate(count=Count('id')).order_by('-count')
         )
         distribution_by_sector = [
-            {'sector': item['business_sector'], 'count': item['count']}
-            for item in sector_counts
+            {'sector': item['business_sector'], 'count': item['count']} for item in sector_counts
         ]
+        sector_distribution = {
+            item['business_sector']: item['count'] for item in sector_counts
+        }
 
-        # Informal Capital Summary
-        informal_agg = InformalTrader.objects.aggregate(
+        informal_records = InformalTrader.objects.filter(trader__in=traders)
+        informal_agg = informal_records.aggregate(
             totalCapital=Sum('estimated_capital_assets'),
             averageCapital=Avg('estimated_capital_assets'),
-            count=Count('id')
+            count=Count('id'),
         )
         informal_capital_summary = {
             'totalCapital': float(informal_agg['totalCapital'] or 0),
             'averageCapital': float(informal_agg['averageCapital'] or 0),
             'count': informal_agg['count'] or 0,
         }
-
-        # Formalization breakdown
+        ready_for_tin = informal_records.filter(
+            formalization_status_recommendation='READY_FOR_TIN_MICRO_ENTERPRISE'
+        ).count()
         formalization_counts = (
-            FormalizationAssessment.objects.values('status')
-            .annotate(count=Count('id'))
-            .order_by('status')
+            FormalizationAssessment.objects.filter(trader__in=traders)
+            .values('status').annotate(count=Count('id')).order_by('status')
         )
         formalization_summary = {item['status']: item['count'] for item in formalization_counts}
 
+        # Include the frontend's established metric names plus legacy aliases.
         return Response({
             'totalTraders': total_traders,
+            'legalCount': legal_count,
+            'informalCount': informal_count,
+            'pendingCount': pending_count + under_review_count,
+            'approvedCount': approved_count,
+            'returnedCount': returned_count,
+            'totalInformalCapital': informal_capital_summary['totalCapital'],
+            'readyForTinCount': ready_for_tin,
+            'woredaDistribution': woreda_distribution,
+            'sectorDistribution': sector_distribution,
             'legalTradersCount': legal_count,
             'informalTradersCount': informal_count,
             'pendingVerificationCount': pending_count + under_review_count,
