@@ -1,0 +1,8 @@
+{
+  "name": "HR-TMIS - Harari Region Trader Management Information System",
+  "description": "Comprehensive Trader Management Information System for Harari Region supporting Legal and Informal Trader registration, verification workflow, locations, and analytics.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

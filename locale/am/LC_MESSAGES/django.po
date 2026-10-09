@@ -1,0 +1,83 @@
+# Translation of HT-TMIS into Amharic.
+# Copyright (C) 2026 Harari Trade Development Agency
+msgid ""
+msgstr ""
+"Project-Id-Version: HT-TMIS 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 12:00+0300\n"
+"PO-Revision-Date: 2026-10-09 12:00+0300\n"
+"Last-Translator: Murad Amen <murad.amen@harari.gov.et>\n"
+"Language-Team: Amharic <am@harari.gov.et>\n"
+"Language: am\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Legal Trader"
+msgstr "ሕጋዊ ነጋዴ"
+
+msgid "Informal Trader"
+msgstr "መደበኛ ያልሆነ ነጋዴ"
+
+msgid "Approved"
+msgstr "ጸድቋል"
+
+msgid "Pending Verification"
+msgstr "በማረጋገጥ ላይ ያለ"
+
+msgid "Returned"
+msgstr "የተመለሰ"
+
+msgid "Draft"
+msgstr "ረቂቅ"
+
+msgid "Submitted"
+msgstr "የቀረበ"
+
+msgid "Under Review"
+msgstr "በግምገማ ላይ"
+
+msgid "Needs Correction"
+msgstr "እርማት የሚሻ"
+
+msgid "Rejected"
+msgstr "ውድቅ የተደረገ"
+
+msgid "Trader ID"
+msgstr "የነጋዴ መለያ ቁጥር"
+
+msgid "Trade Name"
+msgstr "የንግድ ስም"
+
+msgid "Owner Full Name"
+msgstr "የባለቤቱ ሙሉ ስም"
+
+msgid "TIN"
+msgstr "የግብር ከፋይ መለያ ቁጥር (TIN)"
+
+msgid "Trade Registration Number"
+msgstr "የንግድ ምዝገባ ቁጥር"
+
+msgid "Business Sector"
+msgstr "የንግድ ዘርፍ"
+
+msgid "Trade Scale"
+msgstr "የንግድ ደረጃ"
+
+msgid "Wholesale"
+msgstr "ጅምላ"
+
+msgid "Retail"
+msgstr "ችርቻሮ"
+
+msgid "Woreda"
+msgstr "ወረዳ"
+
+msgid "Kebele"
+msgstr "ቀበሌ"
+
+msgid "Estimated Capital / Assets"
+msgstr "የተገመተ ካፒታል / ንብረት"
+
+msgid "Harari People Regional State Trade & Industry Development Agency"
+msgstr "የሐረሪ ሕዝብ ክልላዊ መንግሥት የንግድና ኢንዱስትሪ ልማት ቢሮ"

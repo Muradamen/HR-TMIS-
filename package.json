@@ -1,8 +1,27 @@
 {
+  "name": "hr-tmis",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 3000",
+    "build": "tsc && vite build",
+    "lint": "tsc --noEmit",
+    "preview": "vite preview --host 0.0.0.0 --port 3000"
+  },
   "dependencies": {
     "admin-lte": "^4.10.0",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
-    "overlayscrollbars": "^2.16.0"
+    "overlayscrollbars": "^2.16.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4"
   }
 }
