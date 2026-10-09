@@ -1,7 +1,8 @@
 import os
 from decimal import Decimal
 from datetime import date
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.utils import timezone
 
@@ -17,6 +18,11 @@ class Command(BaseCommand):
     help = 'Seeds all users, groups, locations, traders, and audit logs into the database.'
 
     def handle(self, *args, **options):
+        if not settings.DEBUG and os.environ.get('HT_TMIS_ALLOW_DEMO_SEEDING', '').lower() != 'true':
+            raise CommandError('Demo seeding is disabled outside DEBUG mode. Create production accounts through the administrator workflow.')
+        seed_password = os.environ.get('HT_TMIS_SEED_PASSWORD')
+        if not seed_password:
+            raise CommandError('Set HT_TMIS_SEED_PASSWORD explicitly before seeding demo accounts; no default password is provided.')
         self.stdout.write("Seeding groups and permissions...")
         groups = {
             'DATA_ENCODER': Group.objects.get_or_create(name='DATA_ENCODER')[0],
@@ -76,7 +82,7 @@ class Command(BaseCommand):
                     'is_superuser': ud.get('is_superuser', False),
                 }
             )
-            user.set_password('password123')
+            user.set_password(seed_password)
             user.groups.add(ud['group'])
             user.save()
             created_users[ud['username']] = user
