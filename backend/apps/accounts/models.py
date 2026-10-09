@@ -32,3 +32,18 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.full_name} ({self.get_role_display()})"
+
+
+class LoginAttempt(models.Model):
+    """Persistent per-IP/identifier throttling state shared by Gunicorn workers."""
+    key = models.CharField(max_length=64, unique=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    window_started_at = models.DateTimeField()
+    locked_until = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['updated_at'])]
+
+    def __str__(self):
+        return f"Login throttle {self.key[:12]} ({self.attempts} attempts)"
