@@ -6,7 +6,7 @@ from .models import FormalizationAssessment
 from .serializers import FormalizationAssessmentSerializer
 from apps.traders.models import Trader
 from apps.audit.models import AuditLog
-from apps.core.permissions import IsDirector, IsAgencyLeader, IsAdministrator
+from apps.core.permissions import IsDirector, IsFormalizationReader
 
 class FormalizationViewSet(viewsets.ModelViewSet):
     queryset = FormalizationAssessment.objects.select_related('trader', 'assigned_mentor', 'assessed_by').all()
@@ -17,8 +17,8 @@ class FormalizationViewSet(viewsets.ModelViewSet):
         if self.action in ('create', 'update', 'partial_update', 'destroy', 'assess_trader'):
             classes = [IsDirector]
         else:
-            classes = [IsDirector, IsAgencyLeader, IsAdministrator]
-        return [permissions.IsAuthenticated()] if self.action == 'metadata' else [cls() for cls in classes]
+            classes = [IsFormalizationReader]
+        return [cls() for cls in classes]
 
     @action(detail=False, methods=['post'], url_path='assess')
     def assess_trader(self, request):
