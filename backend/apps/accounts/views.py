@@ -62,6 +62,14 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdministrator]
     http_method_names = ['get', 'post', 'put', 'patch', 'head', 'options']
 
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        requested_role = serializer.validated_data.get('role', instance.role)
+        if instance.pk == self.request.user.pk and requested_role != instance.role:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('You cannot change your own operational role.')
+        serializer.save()
+
     def perform_destroy(self, instance):
         instance.is_active = False
         instance.save(update_fields=['is_active'])
