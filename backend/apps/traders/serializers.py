@@ -81,6 +81,11 @@ class TraderSerializer(serializers.ModelSerializer):
     registeredBy = serializers.SerializerMethodField()
     registeredById = serializers.IntegerField(source='created_by_id', read_only=True)
     verifiedBy = serializers.SerializerMethodField()
+    assignedDirector = serializers.SerializerMethodField()
+    assignedDirectorId = serializers.IntegerField(source='assigned_director_id', read_only=True, allow_null=True)
+    assignedBy = serializers.SerializerMethodField()
+    assignedById = serializers.IntegerField(source='assigned_by_id', read_only=True, allow_null=True)
+    assignedAt = serializers.DateTimeField(source='assigned_at', read_only=True, allow_null=True)
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     updatedAt = serializers.DateTimeField(source='updated_at', read_only=True)
 
@@ -104,6 +109,11 @@ class TraderSerializer(serializers.ModelSerializer):
             'registeredBy',
             'registeredById',
             'verifiedBy',
+            'assignedDirector',
+            'assignedDirectorId',
+            'assignedBy',
+            'assignedById',
+            'assignedAt',
             'verification_notes',
             'rejection_reason',
             'correction_remarks',
@@ -117,3 +127,9 @@ class TraderSerializer(serializers.ModelSerializer):
 
     def get_verifiedBy(self, obj):
         return obj.verified_by.full_name if obj.verified_by else None
+
+    def get_assignedDirector(self, obj):
+        return obj.assigned_director.full_name if obj.assigned_director else None
+
+    def get_assignedBy(self, obj):
+        return obj.assigned_by.full_name if obj.assigned_by else None
