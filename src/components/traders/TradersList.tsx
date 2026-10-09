@@ -110,8 +110,9 @@ export const TradersList: React.FC<TradersListProps> = ({
     if (kebeleFilter !== 'ALL') f.kebele = kebeleFilter;
     if (sectorFilter !== 'ALL') f.sector = sectorFilter;
     if (reviewerFilter !== 'ALL') f.reviewer = reviewerFilter;
+    if (initialStatusFilter === 'PENDING' && statusFilter === 'PENDING' && currentUser.role === 'DIRECTOR' && queueTab !== 'ALL') f.assignment = queueTab;
     return f;
-  }, [debouncedSearch, typeFilter, statusFilter, regionFilter, woredaFilter, kebeleFilter, sectorFilter, reviewerFilter]);
+  }, [debouncedSearch, typeFilter, statusFilter, regionFilter, woredaFilter, kebeleFilter, sectorFilter, reviewerFilter, initialStatusFilter, currentUser.role, queueTab]);
 
   // Fetch paginated traders from Django REST API with client-side fallback
   const fetchTraders = useCallback(async () => {
@@ -349,6 +350,7 @@ export const TradersList: React.FC<TradersListProps> = ({
     setKebeleFilter('ALL');
     setSectorFilter('ALL');
     setReviewerFilter('ALL');
+    setQueueTab('ALL');
     setPage(1);
   };
 
@@ -503,6 +505,20 @@ export const TradersList: React.FC<TradersListProps> = ({
           )}
         </div>
       </div>
+
+      {initialStatusFilter === 'PENDING' && statusFilter === 'PENDING' && currentUser.role === 'DIRECTOR' && (
+        <div className="d-flex flex-wrap gap-2 mb-3" role="group" aria-label={t('verification.queueTabs', 'Verification queue views')}>
+          <button className={queueTab === 'MINE' ? 'btn btn-primary' : 'btn btn-outline-primary'} onClick={() => { setQueueTab('MINE'); setPage(1); }}>
+            {t('verification.myAssigned', 'My Assigned')}
+          </button>
+          <button className={queueTab === 'UNASSIGNED' ? 'btn btn-primary' : 'btn btn-outline-primary'} onClick={() => { setQueueTab('UNASSIGNED'); setPage(1); }}>
+            {t('verification.unassigned', 'Unassigned')}
+          </button>
+          <button className={queueTab === 'ALL' ? 'btn btn-primary' : 'btn btn-outline-primary'} onClick={() => { setQueueTab('ALL'); setPage(1); }}>
+            {t('verification.masterQueue', 'Master Queue')}
+          </button>
+        </div>
+      )}
 
       {/* Multi-Field Filter Card */}
       <div className="card border-0 shadow-sm mb-3">
