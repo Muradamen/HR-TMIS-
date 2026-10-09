@@ -53,6 +53,13 @@ class VerificationClaimView(APIView):
                 notes='Claimed review responsibility'
             )
 
+            AuditLog.objects.create(
+                action='CLAIM_REVIEW',
+                trader_id=trader.trader_id,
+                details='Claimed review responsibility',
+                user=request.user.username,
+            )
+
         return Response(TraderSerializer(trader).data)
 
 class VerificationDecisionView(APIView):
