@@ -74,7 +74,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [woredas, setWoredas] = useState<Woreda[]>([]);
   const [kebeles, setKebeles] = useState<Kebele[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
-  const [users] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
 
   const [userRecentSearches, setUserRecentSearches] = useState<Record<number, string[]>>(() => {
     try {
@@ -98,22 +98,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrentUserState(authenticatedUser);
       setIsAuthenticated(true);
 
-      const [woredasData, kebelesData, tradersData, auditData] = await Promise.allSettled([
+      const [woredasData, kebelesData, tradersData, auditData, reviewersData] = await Promise.allSettled([
         locationService.getWoredas(),
         locationService.getKebeles(),
         traderService.getTraders(),
         auditService.getAuditLogs(),
+        authService.getReviewers(),
       ]);
       setWoredas(woredasData.status === 'fulfilled' ? woredasData.value : []);
       setKebeles(kebelesData.status === 'fulfilled' ? kebelesData.value : []);
       setTraders(tradersData.status === 'fulfilled' ? tradersData.value : []);
       setAuditLogs(auditData.status === 'fulfilled' ? auditData.value : []);
+      setUsers(reviewersData.status === 'fulfilled' ? reviewersData.value : []);
     } catch {
       setIsAuthenticated(false);
       setTraders([]);
       setWoredas([]);
       setKebeles([]);
       setAuditLogs([]);
+      setUsers([]);
     }
   }, []);
 
