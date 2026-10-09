@@ -49,3 +49,13 @@ class CanApproveTrader(permissions.BasePermission):
             request.user.role == 'DIRECTOR' or
             request.user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists()
         )
+
+
+class IsReportExporter(permissions.BasePermission):
+    """Exports contain bulk personal/business data; limit them to oversight/review roles."""
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and (
+            user.role in ('DIRECTOR', 'AGENCY_LEADER') or
+            user.groups.filter(name__in=('DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER')).exists()
+        ))
