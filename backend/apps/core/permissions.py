@@ -12,7 +12,7 @@ def _has_group(user, *names):
 class IsDataEncoder(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
-        if not _authenticated(user):
+        if not _authenticated(user) or user.is_superuser:
             return False
         if user.role in ('SYSTEM_ADMINISTRATOR', 'DIRECTOR', 'AGENCY_LEADER'):
             return False
@@ -24,7 +24,7 @@ class IsDataEncoder(permissions.BasePermission):
 class IsDirector(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
-        if not _authenticated(user):
+        if not _authenticated(user) or user.is_superuser:
             return False
         if user.role in ('SYSTEM_ADMINISTRATOR', 'DATA_ENCODER', 'AGENCY_LEADER'):
             return False
@@ -38,6 +38,8 @@ class IsAdministrator(permissions.BasePermission):
         user = request.user
         if not _authenticated(user):
             return False
+        if user.is_superuser:
+            return True
         if user.role in ('DATA_ENCODER', 'DIRECTOR', 'AGENCY_LEADER'):
             return False
         if _has_group(user, 'DATA_ENCODER', 'DIRECTOR_OF_TRADER_CONTROL', 'AGENCY_LEADER'):
@@ -48,7 +50,7 @@ class IsAdministrator(permissions.BasePermission):
 class IsAgencyLeader(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
-        if not _authenticated(user):
+        if not _authenticated(user) or user.is_superuser:
             return False
         if user.role in ('SYSTEM_ADMINISTRATOR', 'DATA_ENCODER', 'DIRECTOR'):
             return False
@@ -90,6 +92,8 @@ class IsFormalizationReader(permissions.BasePermission):
         user = request.user
         if not _authenticated(user):
             return False
+        if user.is_superuser:
+            return True
         if user.role == 'DATA_ENCODER' or _has_group(user, 'DATA_ENCODER'):
             return False
         return (
@@ -104,6 +108,8 @@ class IsAuditReader(permissions.BasePermission):
         user = request.user
         if not _authenticated(user):
             return False
+        if user.is_superuser:
+            return True
         if user.role == 'DATA_ENCODER' or _has_group(user, 'DATA_ENCODER'):
             return False
         return (
