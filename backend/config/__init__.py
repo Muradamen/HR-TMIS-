@@ -1,1 +1,0 @@
-# HT-TMIS Django Configuration
