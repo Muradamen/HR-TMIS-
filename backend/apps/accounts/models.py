@@ -42,8 +42,5 @@ class LoginAttempt(models.Model):
     locked_until = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        indexes = [models.Index(fields=['updated_at'])]
-
     def __str__(self):
         return f"Login throttle {self.key[:12]} ({self.attempts} attempts)"
