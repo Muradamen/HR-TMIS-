@@ -491,12 +491,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     className="progress-bar bg-danger"
                     style={{
                       width:
-                        informalTraders.length > 0
+                        informalCount > 0
                           ? `${
                               (informalTraders.filter(
                                 t => t.informalDetails?.formalizationStatusRecommendation === 'FOLLOW_UP_REQUIRED'
                               ).length /
-                                informalTraders.length) *
+                                informalCount) *
                               100
                             }%`
                           : '0%',
