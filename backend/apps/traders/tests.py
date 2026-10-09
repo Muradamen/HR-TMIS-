@@ -242,6 +242,52 @@ class HTTMISIntegrationTests(TestCase):
         )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_director_can_bulk_approve_pending_records_atomically(self):
+        first = Trader.objects.create(
+            trader_id='HTT-BULK-APPROVE-01', trader_type='LEGAL', status='SUBMITTED',
+            name='Bulk Trader One', owner_full_name='Owner One',
+            woreda=self.woreda_an, kebele=self.kebele_an1, created_by=self.encoder,
+        )
+        second = Trader.objects.create(
+            trader_id='HTT-BULK-APPROVE-02', trader_type='INFORMAL', status='UNDER_REVIEW',
+            name='Bulk Trader Two', owner_full_name='Owner Two',
+            woreda=self.woreda_an, kebele=self.kebele_an1, created_by=self.encoder,
+        )
+        self.client.force_authenticate(user=self.director)
+        response = self.client.post('/api/v1/verification/bulk-approve/', {
+            'trader_ids': [first.trader_id, second.trader_id],
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['approved_count'], 2)
+        first.refresh_from_db()
+        second.refresh_from_db()
+        self.assertEqual(first.status, 'APPROVED')
+        self.assertEqual(second.status, 'APPROVED')
+        self.assertEqual(AuditLog.objects.filter(action='APPROVE_TRADER', trader_id__in=[
+            first.trader_id, second.trader_id,
+        ]).count(), 2)
+
+    def test_bulk_approval_is_all_or_nothing_for_self_approval_conflict(self):
+        other = Trader.objects.create(
+            trader_id='HTT-BULK-VALID-01', trader_type='LEGAL', status='SUBMITTED',
+            name='Valid Trader', owner_full_name='Encoder Owner',
+            woreda=self.woreda_an, kebele=self.kebele_an1, created_by=self.encoder,
+        )
+        own = Trader.objects.create(
+            trader_id='HTT-BULK-SELF-01', trader_type='LEGAL', status='SUBMITTED',
+            name='Own Trader', owner_full_name='Director Owner',
+            woreda=self.woreda_an, kebele=self.kebele_an1, created_by=self.director,
+        )
+        self.client.force_authenticate(user=self.director)
+        response = self.client.post('/api/v1/verification/bulk-approve/', {
+            'trader_ids': [other.trader_id, own.trader_id],
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        other.refresh_from_db()
+        own.refresh_from_db()
+        self.assertEqual(other.status, 'SUBMITTED')
+        self.assertEqual(own.status, 'SUBMITTED')
+
     def test_multilingual_csv_export(self):
         """CSV export supports en, om, am with UTF-8 BOM for an authorized Director."""
         Trader.objects.create(
