@@ -4,18 +4,15 @@ from decimal import Decimal
 from django.http import HttpResponse
 from django.db.models import Count, Sum, Avg, Q
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 from rest_framework import permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.authentication import BasicAuthentication
-from apps.core.authentication import CsrfExemptSessionAuthentication
 
 from apps.traders.models import Trader, LegalTrader, InformalTrader
 from apps.formalization.models import FormalizationAssessment
 from apps.locations.models import Woreda, Kebele, Region
 from apps.audit.models import AuditLog
+from apps.core.permissions import IsReportExporter
 
 # Import openpyxl for Excel export
 import openpyxl
@@ -371,15 +368,13 @@ class DashboardStatsView(APIView):
         })
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class ExportCsvView(APIView):
     """
     Exports Trader records to CSV.
     Supports both GET (with query parameters) and POST (with JSON payload).
     Enforces formula injection protection and prepends UTF-8 BOM.
     """
-    authentication_classes = [CsrfExemptSessionAuthentication, BasicAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReportExporter]
 
     def _export(self, request):
         data = request.data if request.method == 'POST' and isinstance(request.data, dict) else {}
