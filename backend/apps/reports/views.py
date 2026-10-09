@@ -835,8 +835,18 @@ class CertificatePdfView(APIView):
         except Trader.DoesNotExist:
             return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+        is_encoder = (
+            request.user.role == 'DATA_ENCODER' or
+            request.user.groups.filter(name='DATA_ENCODER').exists()
+        )
+        is_director = (
+            request.user.role == 'DIRECTOR' or
+            request.user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists()
+        )
+        if is_encoder and trader.created_by_id != request.user.id:
+            return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
         if (
-            (request.user.role == 'DIRECTOR' or request.user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists())
+            (is_encoder or is_director)
             and request.user.assigned_woreda_id
             and trader.woreda_id != request.user.assigned_woreda_id
         ):
