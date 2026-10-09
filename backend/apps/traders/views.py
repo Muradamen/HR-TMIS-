@@ -274,8 +274,9 @@ class TraderViewSet(viewsets.ModelViewSet):
             try:
                 woreda = Woreda.objects.get(id=woreda_id)
                 kebele = Kebele.objects.get(id=kebele_id)
-                if kebele.woreda_id != woreda.id:
-                    return Response({'detail': 'Invalid Woreda/Kebele combination.', 'code': 'INVALID_WOREDA_KEBELE_COMBINATION'}, status=status.HTTP_400_BAD_REQUEST)
+                location_error = self._location_scope_error(request, woreda, kebele)
+                if location_error:
+                    return location_error
                 trader.woreda = woreda
                 trader.kebele = kebele
             except (Woreda.DoesNotExist, Kebele.DoesNotExist):
