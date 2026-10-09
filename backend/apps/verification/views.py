@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from apps.traders.models import Trader
 from apps.traders.serializers import TraderSerializer
 from apps.audit.models import AuditLog
-from apps.core.permissions import CanApproveTrader, IsDirector
+from apps.core.permissions import CanApproveTrader, IsDirector, IsTraderReadAllowed
 from .models import VerificationLog
 from .serializers import VerificationDecisionSerializer, VerificationLogSerializer
 
@@ -19,6 +19,8 @@ class VerificationQueueView(APIView):
         queryset = Trader.objects.filter(status=status_filter).select_related(
             'woreda', 'kebele', 'created_by', 'verified_by', 'legal_details', 'informal_details'
         )
+        if request.user.assigned_woreda_id:
+            queryset = queryset.filter(woreda_id=request.user.assigned_woreda_id)
         return Response(TraderSerializer(queryset, many=True).data)
 
 class VerificationClaimView(APIView):
@@ -120,7 +122,7 @@ class VerificationDecisionView(APIView):
         return Response(TraderSerializer(trader).data)
 
 class VerificationHistoryView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsTraderReadAllowed]
 
     def get(self, request, trader_id):
         try:
@@ -128,5 +130,10 @@ class VerificationHistoryView(APIView):
         except Trader.DoesNotExist:
             return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+        user = request.user
+        if (user.role == 'DATA_ENCODER' or user.groups.filter(name='DATA_ENCODER').exists()) and trader.created_by_id != user.id:
+            return Response({'detail': 'You may only view verification history for your own records.'}, status=status.HTTP_403_FORBIDDEN)
+        if (user.role == 'DIRECTOR' or user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists()) and user.assigned_woreda_id and trader.woreda_id != user.assigned_woreda_id:
+            return Response({'detail': 'This trader is outside your assigned Woreda.'}, status=status.HTTP_403_FORBIDDEN)
         logs = VerificationLog.objects.filter(trader=trader).order_by('-timestamp')
         return Response(VerificationLogSerializer(logs, many=True).data)
