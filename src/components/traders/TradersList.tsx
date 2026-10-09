@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/context';
 import { TraderType, TraderStatus } from '../../types';
@@ -27,6 +27,19 @@ export const TradersList: React.FC<TradersListProps> = ({
   const [typeFilter, setTypeFilter] = useState<TraderType | 'ALL'>(initialTypeFilter);
   const [statusFilter, setStatusFilter] = useState<TraderStatus | 'ALL'>(initialStatusFilter);
   const [woredaFilter, setWoredaFilter] = useState<string>('ALL');
+
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setIsExportOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const getTranslatedTitle = () => {
     if (title === 'All Registered Traders' || title === 'Traders Directory') {
@@ -85,34 +98,34 @@ export const TradersList: React.FC<TradersListProps> = ({
     }
 
     const headers = [
-      'Trader ID',
-      'Trader Type',
-      'Status',
-      'Entity Name / Full Name',
-      'Owner Full Name',
-      'TIN',
-      'Trade Registration Number',
-      'National ID / Resident ID',
-      'Phone Number',
-      'Gender',
-      'Age',
-      'Region',
-      'Woreda',
-      'Kebele',
-      'Specific Address / Market Area',
-      'Business Sector / Trade Activity',
-      'Trade Scale',
-      'Ownership Type',
-      'Estimated Capital Assets (ETB)',
-      'Reason For Operating Informally',
-      'Formalization Recommendation',
-      'Issuing Institution / Enumerator',
-      'Date of Issuance / Assessment',
-      'Registered By',
-      'Date Registered',
-      'Verification Status',
-      'Verification Notes',
-      'Verified By'
+      t('csv.traderId', 'Trader ID'),
+      t('csv.type', 'Trader Type'),
+      t('csv.status', 'Status'),
+      t('csv.tradeName', 'Entity Name / Full Name'),
+      t('csv.ownerName', 'Owner Full Name'),
+      t('csv.tin', 'TIN'),
+      t('csv.tradeRegNo', 'Trade Registration Number'),
+      t('csv.nationalId', 'National ID / Resident ID'),
+      t('csv.phone', 'Phone Number'),
+      t('csv.gender', 'Gender'),
+      t('csv.age', 'Age'),
+      t('csv.region', 'Region'),
+      t('csv.woreda', 'Woreda'),
+      t('csv.kebele', 'Kebele'),
+      t('csv.location', 'Specific Address / Market Area'),
+      t('csv.sector', 'Business Sector / Trade Activity'),
+      t('csv.scale', 'Trade Scale'),
+      t('csv.ownership', 'Ownership Type'),
+      t('csv.capital', 'Estimated Capital Assets (ETB)'),
+      t('csv.reason', 'Reason For Operating Informally'),
+      t('csv.recommendation', 'Formalization Recommendation'),
+      t('csv.institution', 'Issuing Institution / Enumerator'),
+      t('csv.dateIssuance', 'Date of Issuance / Assessment'),
+      t('csv.registeredBy', 'Registered By'),
+      t('csv.dateRegistered', 'Date Registered'),
+      t('common.status', 'Verification Status'),
+      t('csv.verificationNotes', 'Verification Notes'),
+      t('csv.verifiedBy', 'Verified By')
     ];
 
     const rows = dataToExport.map(tTrader => {
@@ -195,10 +208,13 @@ export const TradersList: React.FC<TradersListProps> = ({
         </div>
         <div className="d-flex gap-2">
           {/* Export to CSV Button */}
-          <div className="btn-group">
+          <div className="btn-group position-relative" ref={exportRef}>
             <button
               className="btn btn-outline-success d-flex align-items-center gap-2 shadow-sm"
-              onClick={() => exportCSV(false)}
+              onClick={() => {
+                exportCSV(false);
+                setIsExportOpen(false);
+              }}
               title="Download currently filtered registry data as CSV"
             >
               <i className="bi bi-file-earmark-excel-fill text-success fs-6"></i>
@@ -206,22 +222,37 @@ export const TradersList: React.FC<TradersListProps> = ({
             </button>
             <button
               type="button"
-              className="btn btn-outline-success dropdown-toggle dropdown-toggle-split"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
+              className={`btn btn-outline-success dropdown-toggle dropdown-toggle-split ${isExportOpen ? 'active' : ''}`}
+              onClick={() => setIsExportOpen(!isExportOpen)}
+              aria-expanded={isExportOpen}
               title="Export options"
             >
               <span className="visually-hidden">Toggle Dropdown</span>
             </button>
-            <ul className="dropdown-menu dropdown-menu-end shadow-sm">
+            <ul
+              className={`dropdown-menu dropdown-menu-end shadow-sm ${isExportOpen ? 'show' : ''}`}
+              style={{ display: isExportOpen ? 'block' : 'none' }}
+            >
               <li>
-                <button className="dropdown-item d-flex align-items-center gap-2" onClick={() => exportCSV(false)}>
+                <button
+                  className="dropdown-item d-flex align-items-center gap-2"
+                  onClick={() => {
+                    exportCSV(false);
+                    setIsExportOpen(false);
+                  }}
+                >
                   <i className="bi bi-funnel"></i>
                   <span>{t('list.exportFiltered', 'Export Filtered')} ({filteredTraders.length})</span>
                 </button>
               </li>
               <li>
-                <button className="dropdown-item d-flex align-items-center gap-2" onClick={() => exportCSV(true)}>
+                <button
+                  className="dropdown-item d-flex align-items-center gap-2"
+                  onClick={() => {
+                    exportCSV(true);
+                    setIsExportOpen(false);
+                  }}
+                >
                   <i className="bi bi-database-down"></i>
                   <span>{t('list.exportEntire', 'Export Entire Registry')} ({traders.length})</span>
                 </button>

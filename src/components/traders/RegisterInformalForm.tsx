@@ -49,15 +49,16 @@ export const RegisterInformalForm: React.FC<RegisterInformalFormProps> = ({
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!formData.fullName.trim()) newErrors.fullName = `${t('field.fullName', 'Full Name')} is required`;
-    if (!formData.age || formData.age < 16) newErrors.age = 'Age must be at least 16';
+    const reqSuffix = t('val.required', 'is required');
+    if (!formData.fullName.trim()) newErrors.fullName = `${t('field.fullName', 'Full Name')} ${reqSuffix}`;
+    if (!formData.age || formData.age < 16) newErrors.age = t('val.minAge16', 'Age must be at least 16 years old');
     if (!formData.specificLocationMarketArea.trim()) {
-      newErrors.specificLocationMarketArea = `${t('field.specificLocation', 'Specific Location / Market Area')} is required`;
+      newErrors.specificLocationMarketArea = `${t('field.specificLocation', 'Specific Location / Market Area')} ${reqSuffix}`;
     }
     if (formData.estimatedCapitalAssets === undefined || formData.estimatedCapitalAssets < 0) {
-      newErrors.estimatedCapitalAssets = 'Estimated capital must be a positive amount';
+      newErrors.estimatedCapitalAssets = t('val.positiveCapital', 'Estimated capital must be a positive amount');
     }
-    if (!formData.dateOfAssessment) newErrors.dateOfAssessment = `${t('field.dateOfAssessment', 'Date of assessment')} is required`;
+    if (!formData.dateOfAssessment) newErrors.dateOfAssessment = `${t('field.dateOfAssessment', 'Date of assessment')} ${reqSuffix}`;
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

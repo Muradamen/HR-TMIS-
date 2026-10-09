@@ -57,7 +57,7 @@ export const TraderDetail: React.FC<TraderDetailProps> = ({
   };
 
   const handleDelete = () => {
-    if (window.confirm(`${t('common.delete', 'Delete')} ${trader.traderId}?`)) {
+    if (window.confirm(`${t('confirm.deleteTrader', 'Are you sure you want to delete trader')} ${trader.traderId}?`)) {
       deleteTrader(trader.traderId);
       onBack();
     }

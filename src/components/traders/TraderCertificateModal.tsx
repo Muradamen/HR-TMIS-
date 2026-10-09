@@ -50,43 +50,34 @@ export const TraderCertificateModal: React.FC<TraderCertificateModalProps> = ({
             </h5>
             <div className="d-flex align-items-center gap-2">
               {/* Language Switcher for Certificate */}
-              <div className="dropdown">
+              <div className="btn-group btn-group-sm" role="group" aria-label="Certificate language">
                 <button
-                  className="btn btn-sm btn-outline-light dropdown-toggle d-flex align-items-center gap-1"
                   type="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                  title={t('nav.language', 'Language')}
+                  className={`btn btn-sm ${
+                    language === 'en' ? 'btn-warning text-dark fw-bold' : 'btn-outline-light'
+                  }`}
+                  onClick={() => setLanguage('en')}
                 >
-                  <i className="bi bi-translate text-info"></i>
-                  <span className="small">{getCurrentLanguageLabel()}</span>
+                  English
                 </button>
-                <ul className="dropdown-menu dropdown-menu-end shadow">
-                  <li>
-                    <button
-                      className={`dropdown-item small ${language === 'en' ? 'active' : ''}`}
-                      onClick={() => setLanguage('en')}
-                    >
-                      English
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      className={`dropdown-item small ${language === 'om' ? 'active' : ''}`}
-                      onClick={() => setLanguage('om')}
-                    >
-                      Afaan Oromoo
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      className={`dropdown-item small ${language === 'am' ? 'active' : ''}`}
-                      onClick={() => setLanguage('am')}
-                    >
-                      አማርኛ
-                    </button>
-                  </li>
-                </ul>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${
+                    language === 'om' ? 'btn-warning text-dark fw-bold' : 'btn-outline-light'
+                  }`}
+                  onClick={() => setLanguage('om')}
+                >
+                  Afaan Oromoo
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${
+                    language === 'am' ? 'btn-warning text-dark fw-bold' : 'btn-outline-light'
+                  }`}
+                  onClick={() => setLanguage('am')}
+                >
+                  አማርኛ
+                </button>
               </div>
 
               <button className="btn btn-sm btn-primary" onClick={handlePrint}>

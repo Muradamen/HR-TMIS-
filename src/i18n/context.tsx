@@ -30,6 +30,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setLanguageState(lang);
     try {
       localStorage.setItem(STORAGE_LANG_KEY, lang);
+      // Set Django standard language cookie for compatibility with Django i18n
+      document.cookie = `django_language=${lang};path=/;max-age=31536000;SameSite=Lax`;
     } catch (e) {
       console.warn('Could not save language to storage', e);
     }
@@ -37,6 +39,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     document.documentElement.lang = language;
+    document.documentElement.setAttribute('lang', language);
+    document.documentElement.setAttribute('dir', 'ltr');
   }, [language]);
 
   const t = (key: string, fallback?: string): string => {

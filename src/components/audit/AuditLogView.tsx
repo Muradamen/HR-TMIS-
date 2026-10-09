@@ -12,6 +12,23 @@ export const AuditLogView: React.FC = () => {
     return true;
   });
 
+  const getActionLabel = (act: string) => {
+    switch (act) {
+      case 'REGISTER_TRADER':
+        return t('audit.regAction', 'Registration');
+      case 'APPROVE_TRADER':
+        return t('audit.approveAction', 'Approval');
+      case 'RETURN_TRADER':
+        return t('audit.returnAction', 'Return / Correction');
+      case 'UPDATE_TRADER':
+        return t('audit.updateAction', 'Update');
+      case 'DELETE_TRADER':
+        return t('audit.deleteAction', 'Deletion');
+      default:
+        return act.replace(/_/g, ' ');
+    }
+  };
+
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
@@ -71,7 +88,7 @@ export const AuditLogView: React.FC = () => {
                       </td>
                       <td>
                         <span className={`badge ${badgeClass} small`}>
-                          {log.action.replace(/_/g, ' ')}
+                          {getActionLabel(log.action)}
                         </span>
                       </td>
                       <td className="font-monospace fw-bold text-primary">

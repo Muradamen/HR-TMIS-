@@ -13,7 +13,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onSelectTrader,
   onOpenRegisterType,
 }) => {
-  const { traders, getWoredaName, getKebeleName } = useApp();
+  const { traders, getWoredaName, getKebeleName, getRecentTraderObjects, clearRecentSearches, currentUser } = useApp();
   const { t } = useTranslation();
 
   const totalTraders = traders.length;
@@ -34,6 +34,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   );
 
   const recentTraders = [...traders].slice(0, 5);
+  const recentSearches = getRecentTraderObjects();
 
   return (
     <div>
@@ -199,6 +200,115 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Recent Searches Section (stores and displays last 5 traders searched by current user to improve navigation speed) */}
+      <div className="card border-0 shadow-sm mb-4">
+        <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div className="d-flex align-items-center gap-2">
+            <div className="bg-primary bg-opacity-10 text-primary p-2 rounded-circle">
+              <i className="bi bi-clock-history fs-5"></i>
+            </div>
+            <div>
+              <div className="d-flex align-items-center gap-2">
+                <h5 className="mb-0 fw-bold">{t('dashboard.recentSearches', 'Recent Searches')}</h5>
+                <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">
+                  {recentSearches.length} / 5
+                </span>
+                <span className="badge bg-light text-muted border small d-none d-sm-inline">
+                  {currentUser.fullName}
+                </span>
+              </div>
+              <small className="text-muted">
+                {t('dashboard.recentSearchesDesc', 'Traders searched and accessed by current user for fast re-navigation.')}
+              </small>
+            </div>
+          </div>
+          {recentSearches.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 shadow-xs"
+              onClick={clearRecentSearches}
+              title={t('dashboard.clearHistory', 'Clear History')}
+            >
+              <i className="bi bi-trash3"></i>
+              <span>{t('dashboard.clearHistory', 'Clear History')}</span>
+            </button>
+          )}
+        </div>
+        <div className="card-body p-3">
+          {recentSearches.length === 0 ? (
+            <div className="text-center py-4 text-muted">
+              <i className="bi bi-search text-secondary fs-3 d-block mb-2"></i>
+              <div className="fw-medium text-dark">{t('dashboard.noRecentSearches', 'No recent searches recorded yet')}</div>
+              <small className="text-muted">
+                {t('dashboard.noRecentSearchesHint', 'Search for traders using the top navigation search bar or directory to see them here.')}
+              </small>
+            </div>
+          ) : (
+            <div className="row g-2">
+              {recentSearches.map(rTrader => {
+                const isLegal = rTrader.traderType === 'LEGAL';
+                const displayName = isLegal
+                  ? rTrader.legalDetails?.tradeName
+                  : rTrader.informalDetails?.fullName;
+                const subDetail = isLegal
+                  ? `${t('field.ownerFullName', 'Owner')}: ${rTrader.legalDetails?.ownerFullName || '-'} • TIN: ${rTrader.legalDetails?.tin || '-'}`
+                  : `${t('field.natureOfTradeActivity', 'Activity')}: ${t(`activity.${rTrader.informalDetails?.natureOfTradeActivity}`, rTrader.informalDetails?.natureOfTradeActivity?.replace(/_/g, ' ') || '')}`;
+                const woredaId = isLegal ? rTrader.legalDetails?.woredaId : rTrader.informalDetails?.woredaId;
+                const kebeleId = isLegal ? rTrader.legalDetails?.kebeleId : rTrader.informalDetails?.kebeleId;
+
+                return (
+                  <div key={rTrader.traderId} className="col-lg col-md-4 col-sm-6">
+                    <div
+                      className="border rounded-3 p-3 h-100 bg-white shadow-xs d-flex flex-column justify-content-between position-relative hover-shadow"
+                      onClick={() => onSelectTrader(rTrader.traderId)}
+                      style={{ cursor: 'pointer', transition: 'all 0.15s ease-in-out' }}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <div>
+                        <div className="d-flex justify-content-between align-items-center mb-2">
+                          <span className="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace fw-bold" style={{ fontSize: '0.72rem' }}>
+                            {rTrader.traderId}
+                          </span>
+                          <span
+                            className={`badge ${
+                              rTrader.status === 'APPROVED'
+                                ? 'bg-success'
+                                : rTrader.status === 'PENDING'
+                                ? 'bg-warning text-dark'
+                                : 'bg-danger'
+                            }`}
+                            style={{ fontSize: '0.65rem' }}
+                          >
+                            {t(`status.${rTrader.status}`, rTrader.status)}
+                          </span>
+                        </div>
+                        <h6 className="fw-bold mb-1 text-dark text-truncate" title={displayName} style={{ fontSize: '0.88rem' }}>
+                          {displayName}
+                        </h6>
+                        <div className="small text-muted text-truncate mb-2" style={{ fontSize: '0.75rem' }}>
+                          {subDetail}
+                        </div>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center pt-2 border-top text-muted small" style={{ fontSize: '0.72rem' }}>
+                        <span className="text-truncate">
+                          <i className="bi bi-geo-alt me-1 text-secondary"></i>
+                          {woredaId ? getWoredaName(woredaId) : '-'}
+                          {kebeleId ? `, ${getKebeleName(kebeleId)}` : ''}
+                        </span>
+                        <span className="text-primary fw-medium ms-1 flex-shrink-0">
+                          <i className="bi bi-box-arrow-up-right"></i>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

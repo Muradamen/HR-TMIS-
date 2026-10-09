@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/context';
 import { UserRole } from '../../types';
@@ -16,6 +16,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [isLangOpen, setIsLangOpen] = useState(false);
+  const langRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setIsLangOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,18 +72,65 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       }}
     >
       {/* Top Bar with Language Selector */}
-      <div className="position-absolute top-0 end-0 p-3 z-3">
-        <div className="dropdown">
+      <div className="position-absolute top-0 end-0 p-3 z-3 d-flex align-items-center gap-2">
+        {/* Quick segmented pills */}
+        <div className="btn-group btn-group-sm border border-secondary rounded shadow" role="group" aria-label="Language selection">
           <button
-            className="btn btn-sm btn-dark border border-secondary dropdown-toggle d-flex align-items-center gap-2 py-1 px-3 shadow"
             type="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
+            className={`btn btn-sm px-2 py-1 fw-bold ${
+              language === 'en' ? 'btn-primary' : 'btn-dark text-secondary'
+            }`}
+            onClick={() => {
+              setLanguage('en');
+              setIsLangOpen(false);
+            }}
+          >
+            EN
+          </button>
+          <button
+            type="button"
+            className={`btn btn-sm px-2 py-1 fw-bold ${
+              language === 'om' ? 'btn-primary' : 'btn-dark text-secondary'
+            }`}
+            onClick={() => {
+              setLanguage('om');
+              setIsLangOpen(false);
+            }}
+          >
+            OM
+          </button>
+          <button
+            type="button"
+            className={`btn btn-sm px-2 py-1 fw-bold ${
+              language === 'am' ? 'btn-primary' : 'btn-dark text-secondary'
+            }`}
+            onClick={() => {
+              setLanguage('am');
+              setIsLangOpen(false);
+            }}
+          >
+            አማ
+          </button>
+        </div>
+
+        {/* Dropdown with full names */}
+        <div className="dropdown position-relative" ref={langRef}>
+          <button
+            className={`btn btn-sm btn-dark border border-secondary d-flex align-items-center gap-2 py-1 px-3 shadow ${
+              isLangOpen ? 'active' : ''
+            }`}
+            type="button"
+            onClick={() => setIsLangOpen(!isLangOpen)}
+            aria-expanded={isLangOpen}
           >
             <i className="bi bi-translate text-info"></i>
             <span className="fw-medium text-light small">{getCurrentLanguageLabel()}</span>
+            <i className={`bi bi-chevron-${isLangOpen ? 'up' : 'down'} text-muted small`}></i>
           </button>
-          <ul className="dropdown-menu dropdown-menu-end shadow-lg" style={{ minWidth: '180px' }}>
+          <ul
+            className={`dropdown-menu dropdown-menu-end shadow-lg ${isLangOpen ? 'show' : ''}`}
+            style={{ minWidth: '190px', display: isLangOpen ? 'block' : 'none' }}
+          >
             <li className="dropdown-header text-uppercase small fw-bold">
               <i className="bi bi-globe me-1"></i> {t('nav.language', 'Language')}
             </li>
@@ -79,7 +139,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 className={`dropdown-item d-flex align-items-center justify-content-between py-2 ${
                   language === 'en' ? 'active' : ''
                 }`}
-                onClick={() => setLanguage('en')}
+                onClick={() => {
+                  setLanguage('en');
+                  setIsLangOpen(false);
+                }}
               >
                 <div>
                   <span className="fw-medium">English</span>
@@ -93,11 +156,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 className={`dropdown-item d-flex align-items-center justify-content-between py-2 ${
                   language === 'om' ? 'active' : ''
                 }`}
-                onClick={() => setLanguage('om')}
+                onClick={() => {
+                  setLanguage('om');
+                  setIsLangOpen(false);
+                }}
               >
                 <div>
                   <span className="fw-medium">Afaan Oromoo</span>
-                  <small className={`d-block ${language === 'om' ? 'text-white-50' : 'text-muted'}`}>Oromo</small>
+                  <small className={`d-block ${language === 'om' ? 'text-white-50' : 'text-muted'}`}>Oromiffa</small>
                 </div>
                 {language === 'om' && <i className="bi bi-check-lg ms-2"></i>}
               </button>
@@ -107,7 +173,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 className={`dropdown-item d-flex align-items-center justify-content-between py-2 ${
                   language === 'am' ? 'active' : ''
                 }`}
-                onClick={() => setLanguage('am')}
+                onClick={() => {
+                  setLanguage('am');
+                  setIsLangOpen(false);
+                }}
               >
                 <div>
                   <span className="fw-medium">አማርኛ</span>

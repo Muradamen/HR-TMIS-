@@ -32,6 +32,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const [isLangOpen, setIsLangOpen] = useState(false);
+  const langDropdownRef = useRef<HTMLDivElement>(null);
+
+  const [isUserOpen, setIsUserOpen] = useState(false);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
+
   const pendingCount = traders.filter(t => t.status === 'PENDING').length;
 
   // Global search filtering across Name, Trader ID, and License / Registration / TIN / National ID
@@ -76,7 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     });
   }, [searchQuery, traders]);
 
-  // Close search dropdown on click outside
+  // Close search, language, and user dropdowns on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -85,17 +91,31 @@ export const Navbar: React.FC<NavbarProps> = ({
       ) {
         setIsSearchOpen(false);
       }
+      if (
+        langDropdownRef.current &&
+        !langDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsLangOpen(false);
+      }
+      if (
+        userDropdownRef.current &&
+        !userDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsUserOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Keyboard shortcut: Press Escape to close search, / to focus search
+  // Keyboard shortcut: Press Escape to close search & menus, / to focus search
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setIsSearchOpen(false);
+        setIsLangOpen(false);
+        setIsUserOpen(false);
         searchInputRef.current?.blur();
       } else if (
         e.key === '/' &&
@@ -322,21 +342,73 @@ export const Navbar: React.FC<NavbarProps> = ({
         )}
       </div>
 
-      {/* Right: Language Selector, Pending Badge, Register, User Switcher, Logout */}
+      {/* Right: Language Selector, Quick Pills, Pending Badge, Register, User Switcher, Logout */}
       <div className="d-flex align-items-center gap-2 flex-shrink-0">
-        {/* Language Selector Dropdown */}
-        <div className="dropdown">
+        {/* Quick Language Switcher Pills (1-Click switch) */}
+        <div className="btn-group btn-group-sm border rounded shadow-xs" role="group" aria-label="Quick language selector">
           <button
-            className="btn btn-sm btn-light border dropdown-toggle d-flex align-items-center gap-1 py-1 px-2 shadow-sm"
             type="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
+            className={`btn btn-sm px-2 py-1 fw-bold ${
+              language === 'en' ? 'btn-primary' : 'btn-light text-secondary'
+            }`}
+            onClick={() => {
+              setLanguage('en');
+              setIsLangOpen(false);
+            }}
+            title="English"
+          >
+            EN
+          </button>
+          <button
+            type="button"
+            className={`btn btn-sm px-2 py-1 fw-bold ${
+              language === 'om' ? 'btn-primary' : 'btn-light text-secondary'
+            }`}
+            onClick={() => {
+              setLanguage('om');
+              setIsLangOpen(false);
+            }}
+            title="Afaan Oromoo"
+          >
+            OM
+          </button>
+          <button
+            type="button"
+            className={`btn btn-sm px-2 py-1 fw-bold ${
+              language === 'am' ? 'btn-primary' : 'btn-light text-secondary'
+            }`}
+            onClick={() => {
+              setLanguage('am');
+              setIsLangOpen(false);
+            }}
+            title="አማርኛ"
+          >
+            አማ
+          </button>
+        </div>
+
+        {/* Full Language Selector Dropdown */}
+        <div className="dropdown position-relative" ref={langDropdownRef}>
+          <button
+            className={`btn btn-sm btn-light border d-flex align-items-center gap-1 py-1 px-2 shadow-sm ${
+              isLangOpen ? 'active' : ''
+            }`}
+            type="button"
+            onClick={() => {
+              setIsLangOpen(!isLangOpen);
+              setIsUserOpen(false);
+            }}
+            aria-expanded={isLangOpen}
             title={t('nav.language', 'Language')}
           >
             <i className="bi bi-translate text-primary"></i>
-            <span className="fw-medium small d-none d-sm-inline">{getCurrentLanguageLabel()}</span>
+            <span className="fw-medium small d-none d-lg-inline">{getCurrentLanguageLabel()}</span>
+            <i className={`bi bi-chevron-${isLangOpen ? 'up' : 'down'} small text-muted ms-1`} style={{ fontSize: '0.7rem' }}></i>
           </button>
-          <ul className="dropdown-menu dropdown-menu-end shadow-sm" style={{ minWidth: '190px' }}>
+          <ul
+            className={`dropdown-menu dropdown-menu-end shadow-sm ${isLangOpen ? 'show' : ''}`}
+            style={{ minWidth: '200px', display: isLangOpen ? 'block' : 'none' }}
+          >
             <li className="dropdown-header text-uppercase small fw-bold">
               <i className="bi bi-globe me-1"></i> {t('nav.language', 'Language')}
             </li>
@@ -345,7 +417,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className={`dropdown-item d-flex align-items-center justify-content-between py-2 ${
                   language === 'en' ? 'active' : ''
                 }`}
-                onClick={() => setLanguage('en')}
+                onClick={() => {
+                  setLanguage('en');
+                  setIsLangOpen(false);
+                }}
               >
                 <div>
                   <span className="fw-medium">English</span>
@@ -359,11 +434,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className={`dropdown-item d-flex align-items-center justify-content-between py-2 ${
                   language === 'om' ? 'active' : ''
                 }`}
-                onClick={() => setLanguage('om')}
+                onClick={() => {
+                  setLanguage('om');
+                  setIsLangOpen(false);
+                }}
               >
                 <div>
                   <span className="fw-medium">Afaan Oromoo</span>
-                  <small className={`d-block ${language === 'om' ? 'text-white-50' : 'text-muted'}`}>Oromo</small>
+                  <small className={`d-block ${language === 'om' ? 'text-white-50' : 'text-muted'}`}>Oromiffa</small>
                 </div>
                 {language === 'om' && <i className="bi bi-check-lg ms-2"></i>}
               </button>
@@ -373,7 +451,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className={`dropdown-item d-flex align-items-center justify-content-between py-2 ${
                   language === 'am' ? 'active' : ''
                 }`}
-                onClick={() => setLanguage('am')}
+                onClick={() => {
+                  setLanguage('am');
+                  setIsLangOpen(false);
+                }}
               >
                 <div>
                   <span className="fw-medium">አማርኛ</span>
@@ -408,12 +489,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
 
         {/* Role & User Switcher */}
-        <div className="dropdown">
+        <div className="dropdown position-relative" ref={userDropdownRef}>
           <button
-            className="btn btn-sm btn-light border dropdown-toggle d-flex align-items-center gap-2 py-1"
+            className={`btn btn-sm btn-light border d-flex align-items-center gap-2 py-1 ${
+              isUserOpen ? 'active' : ''
+            }`}
             type="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
+            onClick={() => {
+              setIsUserOpen(!isUserOpen);
+              setIsLangOpen(false);
+            }}
+            aria-expanded={isUserOpen}
           >
             <i className="bi bi-person-circle text-primary"></i>
             <div className="text-start d-none d-lg-block" style={{ lineHeight: 1.1 }}>
@@ -422,8 +508,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {t(`role.${currentUser.role}`, currentUser.role.replace(/_/g, ' '))}
               </div>
             </div>
+            <i className={`bi bi-chevron-${isUserOpen ? 'up' : 'down'} small text-muted`} style={{ fontSize: '0.65rem' }}></i>
           </button>
-          <ul className="dropdown-menu dropdown-menu-end shadow-sm" style={{ minWidth: '240px' }}>
+          <ul
+            className={`dropdown-menu dropdown-menu-end shadow-sm ${isUserOpen ? 'show' : ''}`}
+            style={{ minWidth: '240px', display: isUserOpen ? 'block' : 'none' }}
+          >
             <li className="dropdown-header text-uppercase small fw-bold">{t('nav.activeUser', 'Active User')}</li>
             <li className="px-3 py-1">
               <div className="fw-bold text-dark">{currentUser.fullName}</div>
@@ -440,7 +530,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className={`dropdown-item d-flex align-items-center justify-content-between py-2 ${
                     u.id === currentUser.id ? 'active' : ''
                   }`}
-                  onClick={() => setCurrentUser(u)}
+                  onClick={() => {
+                    setCurrentUser(u);
+                    setIsUserOpen(false);
+                  }}
                 >
                   <div>
                     <div className="fw-medium">{u.fullName}</div>
@@ -456,7 +549,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <li>
               <button
                 className="dropdown-item text-secondary d-flex align-items-center gap-2"
-                onClick={resetToDefaults}
+                onClick={() => {
+                  resetToDefaults();
+                  setIsUserOpen(false);
+                }}
               >
                 <i className="bi bi-arrow-counterclockwise"></i>
                 {t('nav.resetDemo', 'Reset Demo Data')}
@@ -466,7 +562,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <li>
               <button
                 className="dropdown-item text-danger fw-semibold d-flex align-items-center gap-2"
-                onClick={logout}
+                onClick={() => {
+                  logout();
+                  setIsUserOpen(false);
+                }}
               >
                 <i className="bi bi-box-arrow-right"></i>
                 {t('nav.signOut', 'Sign Out')}

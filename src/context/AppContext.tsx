@@ -31,6 +31,10 @@ interface AppContextType {
   isAuthenticated: boolean;
   auditLogs: AuditLogEntry[];
   alert: AppAlert | null;
+  recentSearches: string[];
+  recordRecentSearch: (traderId: string) => void;
+  clearRecentSearches: () => void;
+  getRecentTraderObjects: () => Trader[];
   login: (username: string, password: string) => { success: boolean; user?: User; error?: string };
   logout: () => void;
   setCurrentUser: (user: User) => void;
@@ -59,6 +63,14 @@ const STORAGE_KEYS = {
   AUDIT: 'hr_tmis_audit_v1',
   CURRENT_USER: 'hr_tmis_user_v1',
   AUTH_SESSION: 'hr_tmis_auth_session_v1',
+  RECENT_SEARCHES: 'hr_tmis_recent_searches_v1',
+};
+
+const DEFAULT_USER_RECENT_SEARCHES: Record<number, string[]> = {
+  1: ['HTT-000001', 'HTT-000002', 'HTT-000003'], // Murad Amen (Data Encoder)
+  2: ['HTT-000001', 'HTT-000005', 'HTT-000006'], // Dr. Ahmed Hassen (Director)
+  3: ['HTT-000006', 'HTT-000002'],               // Fatuma Ali (Agency Leader)
+  4: ['HTT-000001', 'HTT-000002', 'HTT-000004'], // System Administrator
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -119,6 +131,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   });
 
+  const [userRecentSearches, setUserRecentSearches] = useState<Record<number, string[]>>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.RECENT_SEARCHES);
+      return saved ? JSON.parse(saved) : DEFAULT_USER_RECENT_SEARCHES;
+    } catch {
+      return DEFAULT_USER_RECENT_SEARCHES;
+    }
+  });
+
   const [alert, setAlert] = useState<AppAlert | null>(null);
 
   useEffect(() => {
@@ -140,6 +161,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
   }, [currentUser]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.RECENT_SEARCHES, JSON.stringify(userRecentSearches));
+  }, [userRecentSearches]);
+
+  const activeRecentSearches = userRecentSearches[currentUser.id] || [];
+
+  const recordRecentSearch = (traderId: string) => {
+    if (!traderId) return;
+    const cleanId = traderId.trim().toUpperCase();
+    setUserRecentSearches(prev => {
+      const currentList = prev[currentUser.id] || [];
+      const filtered = currentList.filter(id => id.toUpperCase() !== cleanId);
+      const updatedList = [cleanId, ...filtered].slice(0, 5);
+      return {
+        ...prev,
+        [currentUser.id]: updatedList,
+      };
+    });
+  };
+
+  const clearRecentSearches = () => {
+    setUserRecentSearches(prev => ({
+      ...prev,
+      [currentUser.id]: [],
+    }));
+  };
+
+  const getRecentTraderObjects = (): Trader[] => {
+    const ids = userRecentSearches[currentUser.id] || [];
+    const list: Trader[] = [];
+    for (const id of ids) {
+      const found = traders.find(t => t.traderId.toUpperCase() === id.toUpperCase());
+      if (found) {
+        list.push(found);
+      }
+    }
+    return list;
+  };
 
   const showAlert = (type: AppAlert['type'], message: string) => {
     setAlert({ type, message });
@@ -453,6 +513,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isAuthenticated,
         auditLogs,
         alert,
+        recentSearches: activeRecentSearches,
+        recordRecentSearch,
+        clearRecentSearches,
+        getRecentTraderObjects,
         login,
         logout,
         setCurrentUser,

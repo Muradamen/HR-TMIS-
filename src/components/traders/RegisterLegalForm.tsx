@@ -52,14 +52,15 @@ export const RegisterLegalForm: React.FC<RegisterLegalFormProps> = ({
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!formData.tradeName.trim()) newErrors.tradeName = `${t('field.tradeName', 'Trade / Company Name')} is required`;
-    if (!formData.ownerFullName.trim()) newErrors.ownerFullName = `${t('field.ownerFullName', 'Owner Full Name')} is required`;
-    if (!formData.tin.trim()) newErrors.tin = `${t('field.tin', 'Taxpayer Identification Number (TIN)')} is required`;
-    if (!formData.tradeRegistrationNumber.trim()) newErrors.tradeRegistrationNumber = `${t('field.tradeRegNumber', 'Trade Registration Number')} is required`;
-    if (!formData.age || formData.age < 18) newErrors.age = 'Owner must be at least 18 years old';
-    if (!formData.woredaId) newErrors.woredaId = `${t('field.woreda', 'Woreda')} is required`;
-    if (!formData.kebeleId) newErrors.kebeleId = `${t('field.kebele', 'Kebele')} is required`;
-    if (!formData.dateOfIssuance) newErrors.dateOfIssuance = `${t('field.dateOfIssuance', 'Date of issuance')} is required`;
+    const reqSuffix = t('val.required', 'is required');
+    if (!formData.tradeName.trim()) newErrors.tradeName = `${t('field.tradeName', 'Trade / Company Name')} ${reqSuffix}`;
+    if (!formData.ownerFullName.trim()) newErrors.ownerFullName = `${t('field.ownerFullName', 'Owner Full Name')} ${reqSuffix}`;
+    if (!formData.tin.trim()) newErrors.tin = `${t('field.tin', 'Taxpayer Identification Number (TIN)')} ${reqSuffix}`;
+    if (!formData.tradeRegistrationNumber.trim()) newErrors.tradeRegistrationNumber = `${t('field.tradeRegNumber', 'Trade Registration Number')} ${reqSuffix}`;
+    if (!formData.age || formData.age < 18) newErrors.age = t('val.minAge18', 'Owner must be at least 18 years old');
+    if (!formData.woredaId) newErrors.woredaId = `${t('field.woreda', 'Woreda')} ${reqSuffix}`;
+    if (!formData.kebeleId) newErrors.kebeleId = `${t('field.kebele', 'Kebele')} ${reqSuffix}`;
+    if (!formData.dateOfIssuance) newErrors.dateOfIssuance = `${t('field.dateOfIssuance', 'Date of issuance')} ${reqSuffix}`;
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

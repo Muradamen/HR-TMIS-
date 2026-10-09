@@ -18,7 +18,7 @@ import { LoginPage } from './components/auth/LoginPage';
 import { TraderType, UserRole } from './types';
 
 export const App: React.FC = () => {
-  const { alert, dismissAlert, isAuthenticated, currentUser } = useApp();
+  const { alert, dismissAlert, isAuthenticated, currentUser, recordRecentSearch } = useApp();
   const { t } = useTranslation();
 
   // Initial view default based on role if already authenticated
@@ -43,6 +43,35 @@ export const App: React.FC = () => {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [certificateTraderId, setCertificateTraderId] = useState<string | null>(null);
 
+  const getViewTitle = (view: string): string => {
+    switch (view) {
+      case 'dashboard':
+        return t('view.dashboard', 'Dashboard Overview');
+      case 'traders-all':
+        return t('view.tradersAll', 'All Registered Traders');
+      case 'traders-legal':
+        return t('view.tradersLegal', 'Legal Traders Registry');
+      case 'traders-informal':
+        return t('view.tradersInformal', 'Informal Traders Assessment Directory');
+      case 'verification':
+        return t('view.verification', 'Verification & Approval Queue');
+      case 'register-legal':
+        return t('view.registerLegal', 'Register Legal Trader');
+      case 'register-informal':
+        return t('view.registerInformal', 'Informal Trader Assessment');
+      case 'trader-detail':
+        return t('view.traderDetail', 'Trader Record & Dossier');
+      case 'locations':
+        return t('view.locations', 'Harari Administrative Locations');
+      case 'reports':
+        return t('view.reports', 'Reports & Statistical Insights');
+      case 'audit':
+        return t('view.audit', 'System Audit Trail & Compliance');
+      default:
+        return view.replace('-', ' ');
+    }
+  };
+
   const handleLoginSuccess = (role: UserRole) => {
     const targetView = getInitialViewForRole(role);
     setCurrentView(targetView);
@@ -62,6 +91,7 @@ export const App: React.FC = () => {
   };
 
   const handleSelectTrader = (traderId: string) => {
+    recordRecentSearch(traderId);
     setSelectedTraderId(traderId);
     setCurrentView('trader-detail');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -151,8 +181,8 @@ export const App: React.FC = () => {
                   </a>
                 </li>
                 {currentView !== 'dashboard' && (
-                  <li className="breadcrumb-item active text-primary fw-medium text-capitalize" aria-current="page">
-                    {currentView.replace('-', ' ')}
+                  <li className="breadcrumb-item active text-primary fw-medium" aria-current="page">
+                    {getViewTitle(currentView)}
                   </li>
                 )}
               </ol>
@@ -175,7 +205,7 @@ export const App: React.FC = () => {
             <TradersList
               initialTypeFilter="ALL"
               initialStatusFilter="ALL"
-              title="All Registered Traders"
+              title={getViewTitle('traders-all')}
               onSelectTrader={handleSelectTrader}
               onOpenRegisterType={() => setIsRegisterModalOpen(true)}
               onPrintCertificate={handlePrintCertificate}
@@ -186,7 +216,7 @@ export const App: React.FC = () => {
             <TradersList
               initialTypeFilter="LEGAL"
               initialStatusFilter="ALL"
-              title="Legal Traders Registry"
+              title={getViewTitle('traders-legal')}
               onSelectTrader={handleSelectTrader}
               onOpenRegisterType={() => setIsRegisterModalOpen(true)}
               onPrintCertificate={handlePrintCertificate}
@@ -197,7 +227,7 @@ export const App: React.FC = () => {
             <TradersList
               initialTypeFilter="INFORMAL"
               initialStatusFilter="ALL"
-              title="Informal Traders Assessment Directory"
+              title={getViewTitle('traders-informal')}
               onSelectTrader={handleSelectTrader}
               onOpenRegisterType={() => setIsRegisterModalOpen(true)}
               onPrintCertificate={handlePrintCertificate}
@@ -208,7 +238,7 @@ export const App: React.FC = () => {
             <TradersList
               initialTypeFilter="ALL"
               initialStatusFilter="PENDING"
-              title="Verification & Approval Queue"
+              title={getViewTitle('verification')}
               onSelectTrader={handleSelectTrader}
               onOpenRegisterType={() => setIsRegisterModalOpen(true)}
               onPrintCertificate={handlePrintCertificate}
