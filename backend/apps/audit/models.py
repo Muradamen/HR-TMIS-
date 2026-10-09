@@ -14,6 +14,7 @@ class AuditLog(models.Model):
         ('DELETE_TRADER', _('Delete Trader')),
         ('EXPORT_CSV', _('Export CSV Data')),
         ('EXPORT_EXCEL', _('Export Excel Data')),
+        ('EXPORT_PDF', _('Export PDF Report')),
         ('PRINT_CERTIFICATE', _('Print Certificate')),
         ('LOGIN', _('User Login')),
         ('LOGOUT', _('User Logout')),

@@ -32,6 +32,47 @@ class TraderViewSet(viewsets.ModelViewSet):
     ]
     ordering_fields = ['created_at', 'status', 'trader_id']
 
+    def get_queryset(self):
+        qs = Trader.objects.select_related(
+            'woreda', 'woreda__region', 'kebele', 'created_by', 'verified_by', 'assigned_director',
+            'legal_details', 'informal_details'
+        ).all()
+
+        params = self.request.query_params
+
+        # Specific IDs list if provided
+        ids = params.get('ids')
+        if ids:
+            id_list = [i.strip() for i in ids.split(',') if i.strip()]
+            if id_list:
+                qs = qs.filter(trader_id__in=id_list)
+
+        # Region
+        region = params.get('region')
+        if region and region != 'ALL':
+            if str(region).isdigit():
+                qs = qs.filter(woreda__region_id=int(region))
+            else:
+                qs = qs.filter(woreda__region__name__icontains=region)
+
+        # Business Sector
+        sector = params.get('sector') or params.get('business_sector')
+        if sector and sector != 'ALL':
+            qs = qs.filter(legal_details__business_sector=sector)
+
+        # Reviewer / Assigned Director
+        reviewer = params.get('reviewer')
+        if reviewer and reviewer != 'ALL':
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(verified_by__username__icontains=reviewer) |
+                Q(verified_by__full_name__icontains=reviewer) |
+                Q(assigned_director__username__icontains=reviewer) |
+                Q(assigned_director__full_name__icontains=reviewer)
+            )
+
+        return qs
+
     def generate_trader_id(self):
         last_trader = Trader.objects.order_by('-id').first()
         next_num = (last_trader.id + 1) if last_trader else 1
