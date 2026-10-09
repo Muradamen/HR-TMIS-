@@ -115,6 +115,11 @@ export interface Trader {
   informalDetails?: InformalTraderDetails;
   verificationNotes?: string;
   verifiedBy?: string;
+  assignedDirector?: string | null;
+  assignedDirectorId?: number | null;
+  assignedBy?: string | null;
+  assignedById?: number | null;
+  assignedAt?: string | null;
 }
 
 export interface AuditLogEntry {
