@@ -228,6 +228,8 @@ class TraderViewSet(viewsets.ModelViewSet):
         trader = self.get_object()
         if trader.trader_type != 'LEGAL':
             return Response({'detail': 'Not a legal trader.', 'code': 'INVALID_TYPE'}, status=status.HTTP_400_BAD_REQUEST)
+        if trader.status not in ('DRAFT', 'NEEDS_CORRECTION', 'RETURNED'):
+            return Response({'detail': 'Only draft or returned records may be edited.'}, status=status.HTTP_409_CONFLICT)
 
         data = request.data
         woreda_id = data.get('woredaId') or data.get('woreda')
@@ -284,6 +286,8 @@ class TraderViewSet(viewsets.ModelViewSet):
         trader = self.get_object()
         if trader.trader_type != 'INFORMAL':
             return Response({'detail': 'Not an informal trader.', 'code': 'INVALID_TYPE'}, status=status.HTTP_400_BAD_REQUEST)
+        if trader.status not in ('DRAFT', 'NEEDS_CORRECTION', 'RETURNED'):
+            return Response({'detail': 'Only draft or returned records may be edited.'}, status=status.HTTP_409_CONFLICT)
 
         data = request.data
         woreda_id = data.get('woredaId') or data.get('woreda')
@@ -334,19 +338,22 @@ class TraderViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         trader = self.get_object()
-        trader_id = trader.trader_id
-        trader_name = trader.name
-
+        if trader.created_by_id != request.user.id:
+            return Response({'detail': 'You may only archive records you created.'},
+                            status=status.HTTP_403_FORBIDDEN)
+        if trader.status not in ('DRAFT', 'NEEDS_CORRECTION', 'RETURNED'):
+            return Response({'detail': 'Submitted or finalized records cannot be archived through delete.'},
+                            status=status.HTTP_409_CONFLICT)
         with transaction.atomic():
+            trader.status = 'ARCHIVED'
+            trader.save(update_fields=['status', 'updated_at'] if hasattr(trader, 'updated_at') else ['status'])
             AuditLog.objects.create(
-                action='DELETE_TRADER',
-                trader_id=trader_id,
-                details=f"Deleted trader '{trader_name}' ({trader.trader_type})",
-                user=request.user.username if request.user.is_authenticated else 'system',
+                action='ARCHIVE_TRADER',
+                trader_id=trader.trader_id,
+                details=f"Archived trader '{trader.name}' ({trader.trader_type}); record retained for audit.",
+                user=request.user.username,
             )
-            trader.delete()
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(TraderSerializer(trader).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='submit')
     def submit_record(self, request, trader_id=None):
