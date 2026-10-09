@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { reportsService, DashboardMetrics } from '../../services/reports.service';
+import { reportsService } from '../../services/reports.service';
+import type { DashboardMetrics } from '../../services/reports.service';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/context';
 
