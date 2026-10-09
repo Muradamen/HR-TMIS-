@@ -6,6 +6,7 @@ from .models import User
 class UserSerializer(serializers.ModelSerializer):
     fullName = serializers.CharField(source='full_name', read_only=True)
     assignedWoredaId = serializers.IntegerField(source='assigned_woreda_id', read_only=True)
+    email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True, required=False, validators=[validate_password], trim_whitespace=False)
 
     class Meta:
