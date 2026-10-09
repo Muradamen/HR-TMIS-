@@ -15,4 +15,8 @@ export const authService = {
   getMe: async (): Promise<User> => {
     return api.get('/auth/me/');
   },
+
+  getReviewers: async (): Promise<User[]> => {
+    return api.get('/auth/reviewers/');
+  },
 };
