@@ -178,6 +178,14 @@ def get_filtered_traders_queryset(request):
         'legal_details', 'informal_details'
     ).all().order_by('trader_id')
 
+    # Apply role/territory restrictions before any client-supplied filters or selected IDs.
+    user = request.user
+    if user.role == 'DIRECTOR' or user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists():
+        if user.assigned_woreda_id:
+            queryset = queryset.filter(woreda_id=user.assigned_woreda_id)
+    elif user.role != 'AGENCY_LEADER' and not user.groups.filter(name='AGENCY_LEADER').exists():
+        return Trader.objects.none(), False, 0, ['No export access']
+
     data = request.data if request.method == 'POST' and isinstance(request.data, dict) else {}
     params = request.query_params
 
