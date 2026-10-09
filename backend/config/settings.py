@@ -4,10 +4,10 @@ from urllib.parse import urlparse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-hr-tmis-development-key-change-in-production')
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'local-only-unsafe-development-key')
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',') if h.strip()]
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -126,7 +126,6 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'apps.core.exceptions.custom_exception_handler',
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -147,3 +146,25 @@ CORS_ALLOWED_ORIGINS = [orig.strip() for orig in cors_origins.split(',') if orig
 
 csrf_origins = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000')
 CSRF_TRUSTED_ORIGINS = [orig.strip() for orig in csrf_origins.split(',') if orig.strip()]
+
+# Hardened browser/session defaults. Production deployments must use HTTPS.
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SAMESITE = 'Lax'
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'same-origin'
+X_FRAME_OPTIONS = 'DENY'
+SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '1800'))
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+if not DEBUG:
+    if not os.environ.get('DJANGO_SECRET_KEY'):
+        raise RuntimeError('DJANGO_SECRET_KEY must be set in production.')
+    if '*' in ALLOWED_HOSTS:
+        raise RuntimeError('Wildcard ALLOWED_HOSTS is forbidden in production.')
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True').lower() == 'true'
+    SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
