@@ -192,6 +192,9 @@ def get_filtered_traders_queryset(request):
 
     data = request.data if request.method == 'POST' and isinstance(request.data, dict) else {}
     params = request.query_params
+    status_filter = data.get('status') or params.get('status')
+    if not status_filter or status_filter == 'ALL':
+        queryset = queryset.exclude(status='ARCHIVED')
 
     # Check for explicit IDs parameter
     ids_param = None
