@@ -41,6 +41,9 @@ class FormalizationViewSet(viewsets.ModelViewSet):
         except Trader.DoesNotExist:
             return Response({'detail': f'Trader {trader_id} not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+        if request.user.assigned_woreda_id and trader.woreda_id != request.user.assigned_woreda_id:
+            return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
+
         if trader.trader_type != 'INFORMAL':
             return Response({'detail': 'Formalization assessment is only applicable to informal traders.'}, status=status.HTTP_400_BAD_REQUEST)
 
