@@ -124,7 +124,9 @@ class TraderViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'A trader with this Registration Number already exists.', 'code': 'DUPLICATE_REGISTRATION_NUMBER'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
-            target_status = 'SUBMITTED'
+            target_status = data.get('status', 'SUBMITTED')
+            if target_status not in ('DRAFT', 'SUBMITTED'):
+                return Response({'detail': 'New records may only be created as DRAFT or SUBMITTED.'}, status=status.HTTP_400_BAD_REQUEST)
             trader = Trader.objects.create(
                 trader_id=self.generate_trader_id(),
                 trader_type='LEGAL',
@@ -183,7 +185,9 @@ class TraderViewSet(viewsets.ModelViewSet):
             )
 
         capital = Decimal(str(data.get('estimatedCapitalAssets', 0)))
-        target_status = 'SUBMITTED'
+        target_status = data.get('status', 'SUBMITTED')
+        if target_status not in ('DRAFT', 'SUBMITTED'):
+            return Response({'detail': 'New records may only be created as DRAFT or SUBMITTED.'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
             trader = Trader.objects.create(
