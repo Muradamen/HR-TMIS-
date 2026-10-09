@@ -79,6 +79,7 @@ class TraderSerializer(serializers.ModelSerializer):
     legalDetails = LegalTraderSerializer(source='legal_details', read_only=True)
     informalDetails = InformalTraderSerializer(source='informal_details', read_only=True)
     registeredBy = serializers.SerializerMethodField()
+    registeredById = serializers.IntegerField(source='created_by_id', read_only=True)
     verifiedBy = serializers.SerializerMethodField()
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     updatedAt = serializers.DateTimeField(source='updated_at', read_only=True)
@@ -101,6 +102,7 @@ class TraderSerializer(serializers.ModelSerializer):
             'legalDetails',
             'informalDetails',
             'registeredBy',
+            'registeredById',
             'verifiedBy',
             'verification_notes',
             'rejection_reason',
