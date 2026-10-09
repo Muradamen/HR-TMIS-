@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login, logout, get_user_model
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
+from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
 from django.core.cache import cache
 from rest_framework import status, viewsets, permissions
@@ -11,6 +12,15 @@ from apps.core.permissions import IsAdministrator
 User = get_user_model()
 LOGIN_FAILURE_LIMIT = 8
 LOGIN_LOCK_SECONDS = 15 * 60
+
+
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class CsrfCookieView(APIView):
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        return Response({'csrfToken': get_token(request)})
 
 
 @method_decorator(csrf_protect, name='dispatch')
