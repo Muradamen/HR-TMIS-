@@ -161,7 +161,7 @@ class BulkApprovalView(APIView):
 
         with transaction.atomic():
             locked = list(
-                Trader.objects.select_for_update().select_related(
+                Trader.objects.select_for_update(of=('self',)).select_related(
                     'woreda', 'kebele', 'created_by', 'assigned_director',
                     'legal_details', 'informal_details',
                 ).filter(trader_id__in=trader_ids)
