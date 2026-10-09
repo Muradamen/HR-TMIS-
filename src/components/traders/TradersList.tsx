@@ -4,6 +4,7 @@ import { useTranslation } from '../../i18n/context';
 import { TraderType, TraderStatus, Trader } from '../../types';
 import { traderService } from '../../services/trader.service';
 import { reportsService } from '../../services/reports.service';
+import { verificationService } from '../../services/verification.service';
 
 interface TradersListProps {
   initialTypeFilter?: TraderType | 'ALL';
@@ -54,6 +55,7 @@ export const TradersList: React.FC<TradersListProps> = ({
   const [displayedTraders, setDisplayedTraders] = useState<Trader[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [isBulkApproving, setIsBulkApproving] = useState<boolean>(false);
 
   // Selection State
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -225,6 +227,34 @@ export const TradersList: React.FC<TradersListProps> = ({
     });
   };
 
+  const handleBulkApprove = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) {
+      showAlert('warning', t('verification.selectRecords', 'Select at least one pending record.'));
+      return;
+    }
+    if (ids.length > 100) {
+      showAlert('warning', t('verification.maxBulk', 'Approve no more than 100 records at once.'));
+      return;
+    }
+    if (!window.confirm(t('verification.confirmBulkApprove', `Approve ${ids.length} selected records?`))) {
+      return;
+    }
+
+    setIsBulkApproving(true);
+    try {
+      const result = await verificationService.bulkApproveTraders(ids);
+      cacheTraders(result.traders);
+      setSelectedIds(new Set());
+      showAlert('success', t('verification.bulkApproved', `Successfully approved ${result.approved_count} records.`));
+      await fetchTraders();
+    } catch (err: any) {
+      showAlert('danger', err?.message || t('verification.bulkFailed', 'Bulk approval failed. No records were changed.'));
+    } finally {
+      setIsBulkApproving(false);
+    }
+  };
+
   // Export Selected Handlers
   const handleExportSelectedExcel = async () => {
     if (selectedIds.size === 0) {
@@ -353,6 +383,19 @@ export const TradersList: React.FC<TradersListProps> = ({
           </p>
         </div>
         <div className="d-flex gap-2 align-items-center">
+          {currentUser.role === 'DIRECTOR' && statusFilter === 'PENDING' && (
+            <button
+              className="btn btn-success d-flex align-items-center gap-2"
+              onClick={handleBulkApprove}
+              disabled={selectedIds.size === 0 || selectedIds.size > 100 || isBulkApproving}
+              title={t('verification.bulkApproveTitle', 'Approve selected pending records')}
+            >
+              {isBulkApproving
+                ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                : <i className="bi bi-check2-all"></i>}
+              {t('verification.approveSelected', 'Approve selected')} ({selectedIds.size})
+            </button>
+          )}
           {/* Export Dropdown Menu */}
           <div className="btn-group position-relative" ref={exportRef}>
             <button
