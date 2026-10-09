@@ -7,6 +7,10 @@ export const verificationService = {
     return Array.isArray(res) ? res : (res?.results || []);
   },
 
+  bulkApproveTraders: async (traderIds: string[], notes = ''): Promise<{ approved_count: number; traders: Trader[] }> => {
+    return api.post('/verification/bulk-approve/', { trader_ids: traderIds, notes });
+  },
+
   claimTrader: async (traderId: string): Promise<Trader> => {
     return api.post(`/verification/${traderId}/claim/`);
   },

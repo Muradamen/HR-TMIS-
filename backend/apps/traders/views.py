@@ -11,14 +11,7 @@ from .models import Trader, LegalTrader, InformalTrader
 from .serializers import TraderSerializer
 from apps.locations.models import Woreda, Kebele
 from apps.audit.models import AuditLog
-from apps.core.permissions import IsDataEncoder, IsAdministrator
-
-from rest_framework.pagination import PageNumberPagination
-
-class StandardResultsSetPagination(PageNumberPagination):
-    page_size = 25
-    page_size_query_param = 'page_size'
-    max_page_size = 100
+from apps.core.permissions import IsDataEncoder, IsAdministrator, IsDirector, IsAgencyLeader, IsTraderReadAllowed
 
 class TraderViewSet(viewsets.ModelViewSet):
     queryset = Trader.objects.select_related(
@@ -26,9 +19,8 @@ class TraderViewSet(viewsets.ModelViewSet):
     ).all()
     serializer_class = TraderSerializer
     lookup_field = 'trader_id'
-    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'trader_type', 'woreda', 'kebele']
+    filterset_fields = ['trader_type', 'woreda', 'kebele']
     search_fields = [
         'trader_id',
         'name',
@@ -40,25 +32,30 @@ class TraderViewSet(viewsets.ModelViewSet):
     ]
     ordering_fields = ['created_at', 'status', 'trader_id']
 
-    def get_queryset(self):
-        user = self.request.user
-        if not user or not user.is_authenticated:
-            return Trader.objects.none()
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy',
+                           'register_legal', 'register_informal', 'update_legal',
+                           'update_informal', 'submit_record'):
+            classes = [IsDataEncoder]
+        else:
+            classes = [IsTraderReadAllowed]
+        return [cls() for cls in classes]
 
+    def create(self, request, *args, **kwargs):
+        return Response(
+            {'detail': 'Use the legal or informal registration endpoint to create a complete trader record.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def get_queryset(self):
         qs = Trader.objects.select_related(
             'woreda', 'woreda__region', 'kebele', 'created_by', 'verified_by', 'assigned_director',
             'legal_details', 'informal_details'
-        ).all().order_by('-created_at')
-
-        # Confidentiality rule: Private drafts created by others are excluded
-        from django.db.models import Q
-        qs = qs.filter(Q(created_by=user) | ~Q(status='DRAFT'))
-
-        # Territorial scoping for Data Encoders
-        if user.role == 'DATA_ENCODER' and getattr(user, 'assigned_woreda_id', None):
-            qs = qs.filter(woreda_id=user.assigned_woreda_id)
+        ).all()
 
         params = self.request.query_params
+        if not params.get('status') or params.get('status') == 'ALL':
+            qs = qs.exclude(status='ARCHIVED')
 
         # Specific IDs list if provided
         ids = params.get('ids')
@@ -67,33 +64,21 @@ class TraderViewSet(viewsets.ModelViewSet):
             if id_list:
                 qs = qs.filter(trader_id__in=id_list)
 
-        # Free-text search handling
-        search_term = (params.get('search') or params.get('q') or '').strip()
-        if search_term:
-            qs = qs.filter(
-                Q(trader_id__icontains=search_term) |
-                Q(name__icontains=search_term) |
-                Q(owner_full_name__icontains=search_term) |
-                Q(phone_number__icontains=search_term) |
-                Q(legal_details__tin__icontains=search_term) |
-                Q(legal_details__trade_registration_number__icontains=search_term) |
-                Q(informal_details__national_id_resident_id__icontains=search_term)
-            )
-
-        # Trader Type
-        trader_type = params.get('trader_type') or params.get('type')
+        # Frontend uses `type`; expose it as the canonical trader_type filter.
+        trader_type = params.get('type') or params.get('trader_type')
         if trader_type and trader_type != 'ALL':
             qs = qs.filter(trader_type=trader_type)
 
-        # Status
-        status_val = params.get('status')
-        if status_val and status_val != 'ALL':
-            if status_val == 'PENDING':
-                qs = qs.filter(status__in=['PENDING', 'SUBMITTED', 'UNDER_REVIEW'])
-            elif status_val == 'RETURNED':
+        status_filter = params.get('status')
+        if status_filter and status_filter != 'ALL':
+            if status_filter == 'PENDING':
+                qs = qs.filter(status__in=['SUBMITTED', 'UNDER_REVIEW'])
+            elif status_filter == 'RETURNED':
                 qs = qs.filter(status__in=['RETURNED', 'NEEDS_CORRECTION'])
             else:
-                qs = qs.filter(status=status_val)
+                qs = qs.filter(status=status_filter)
+        else:
+            qs = qs.exclude(status='ARCHIVED')
 
         # Region
         region = params.get('region')
@@ -103,22 +88,6 @@ class TraderViewSet(viewsets.ModelViewSet):
             else:
                 qs = qs.filter(woreda__region__name__icontains=region)
 
-        # Woreda
-        woreda = params.get('woreda')
-        if woreda and woreda != 'ALL':
-            if str(woreda).isdigit():
-                qs = qs.filter(woreda_id=int(woreda))
-            else:
-                qs = qs.filter(woreda__name__icontains=woreda)
-
-        # Kebele
-        kebele = params.get('kebele')
-        if kebele and kebele != 'ALL':
-            if str(kebele).isdigit():
-                qs = qs.filter(kebele_id=int(kebele))
-            else:
-                qs = qs.filter(kebele__name__icontains=kebele)
-
         # Business Sector
         sector = params.get('sector') or params.get('business_sector')
         if sector and sector != 'ALL':
@@ -127,6 +96,7 @@ class TraderViewSet(viewsets.ModelViewSet):
         # Reviewer / Assigned Director
         reviewer = params.get('reviewer')
         if reviewer and reviewer != 'ALL':
+            from django.db.models import Q
             qs = qs.filter(
                 Q(verified_by__username__icontains=reviewer) |
                 Q(verified_by__full_name__icontains=reviewer) |
@@ -134,12 +104,61 @@ class TraderViewSet(viewsets.ModelViewSet):
                 Q(assigned_director__full_name__icontains=reviewer)
             )
 
+        user = self.request.user
+        if user.is_authenticated:
+            if user.role == 'DATA_ENCODER' or user.groups.filter(name='DATA_ENCODER').exists():
+                qs = qs.filter(created_by=user)
+                if user.assigned_woreda_id:
+                    qs = qs.filter(woreda_id=user.assigned_woreda_id)
+            elif user.role == 'DIRECTOR' or user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists():
+                if user.assigned_woreda_id:
+                    qs = qs.filter(woreda_id=user.assigned_woreda_id)
+                assignment = params.get('assignment')
+                if assignment == 'MINE':
+                    qs = qs.filter(assigned_director=user)
+                elif assignment == 'UNASSIGNED':
+                    qs = qs.filter(assigned_director__isnull=True)
+
         return qs
+
+    def perform_update(self, serializer):
+        trader = serializer.instance
+        if trader.status not in ('DRAFT', 'NEEDS_CORRECTION', 'RETURNED'):
+            from rest_framework.exceptions import APIException
+            conflict = APIException('Only draft or returned records may be edited.')
+            conflict.status_code = status.HTTP_409_CONFLICT
+            raise conflict
+        if 'woreda' in serializer.validated_data or 'kebele' in serializer.validated_data:
+            woreda = serializer.validated_data.get('woreda', trader.woreda)
+            kebele = serializer.validated_data.get('kebele', trader.kebele)
+            from rest_framework.exceptions import PermissionDenied, ValidationError
+            if not woreda.is_active or not kebele.is_active:
+                raise ValidationError('Inactive Woreda or Kebele cannot be selected.')
+            if self.request.user.assigned_woreda_id and woreda.id != self.request.user.assigned_woreda_id:
+                raise PermissionDenied('Selected Woreda is outside your assigned territory.')
+            if kebele.woreda_id != woreda.id:
+                raise ValidationError('Selected Kebele must belong to the selected Woreda.')
+        serializer.save()
 
     def generate_trader_id(self):
         last_trader = Trader.objects.order_by('-id').first()
         next_num = (last_trader.id + 1) if last_trader else 1
         return f"HTT-{next_num:06d}"
+
+    def _location_scope_error(self, request, woreda, kebele):
+        if not woreda.is_active or not kebele.is_active:
+            return Response({'detail': 'Inactive Woreda or Kebele cannot be selected.', 'code': 'INACTIVE_LOCATION'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if request.user.assigned_woreda_id and woreda.id != request.user.assigned_woreda_id:
+            return Response({'detail': 'Selected Woreda is outside your assigned territory.', 'code': 'WOREDA_FORBIDDEN'},
+                            status=status.HTTP_403_FORBIDDEN)
+        if kebele.woreda_id != woreda.id:
+            return Response(
+                {'detail': 'Invalid Woreda/Kebele combination: the selected Kebele does not belong to the selected Woreda.',
+                 'code': 'INVALID_WOREDA_KEBELE_COMBINATION'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return None
 
     @action(detail=False, methods=['post'], url_path='legal')
     def register_legal(self, request):
@@ -153,11 +172,9 @@ class TraderViewSet(viewsets.ModelViewSet):
         except (Woreda.DoesNotExist, Kebele.DoesNotExist):
             return Response({'detail': 'Invalid Woreda or Kebele ID.', 'code': 'INVALID_LOCATION'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if kebele.woreda_id != woreda.id:
-            return Response(
-                {'detail': 'Invalid Woreda/Kebele combination: the selected Kebele does not belong to the selected Woreda.', 'code': 'INVALID_WOREDA_KEBELE_COMBINATION'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        location_error = self._location_scope_error(request, woreda, kebele)
+        if location_error:
+            return location_error
 
         tin = data.get('tin', '').strip()
         trade_reg = data.get('tradeRegistrationNumber', '').strip()
@@ -169,6 +186,8 @@ class TraderViewSet(viewsets.ModelViewSet):
 
         with transaction.atomic():
             target_status = data.get('status', 'SUBMITTED')
+            if target_status not in ('DRAFT', 'SUBMITTED'):
+                return Response({'detail': 'New records may only be created as DRAFT or SUBMITTED.'}, status=status.HTTP_400_BAD_REQUEST)
             trader = Trader.objects.create(
                 trader_id=self.generate_trader_id(),
                 trader_type='LEGAL',
@@ -220,14 +239,14 @@ class TraderViewSet(viewsets.ModelViewSet):
         except (Woreda.DoesNotExist, Kebele.DoesNotExist):
             return Response({'detail': 'Invalid Woreda or Kebele ID.', 'code': 'INVALID_LOCATION'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if kebele.woreda_id != woreda.id:
-            return Response(
-                {'detail': 'Invalid Woreda/Kebele combination: the selected Kebele does not belong to the selected Woreda.', 'code': 'INVALID_WOREDA_KEBELE_COMBINATION'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        location_error = self._location_scope_error(request, woreda, kebele)
+        if location_error:
+            return location_error
 
         capital = Decimal(str(data.get('estimatedCapitalAssets', 0)))
         target_status = data.get('status', 'SUBMITTED')
+        if target_status not in ('DRAFT', 'SUBMITTED'):
+            return Response({'detail': 'New records may only be created as DRAFT or SUBMITTED.'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
             trader = Trader.objects.create(
@@ -267,11 +286,13 @@ class TraderViewSet(viewsets.ModelViewSet):
 
         return Response(TraderSerializer(trader).data, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['put', 'patch'], url_path='update-legal')
+    @action(detail=True, methods=['post', 'put', 'patch'], url_path='update-legal')
     def update_legal(self, request, trader_id=None):
         trader = self.get_object()
         if trader.trader_type != 'LEGAL':
             return Response({'detail': 'Not a legal trader.', 'code': 'INVALID_TYPE'}, status=status.HTTP_400_BAD_REQUEST)
+        if trader.status not in ('DRAFT', 'NEEDS_CORRECTION', 'RETURNED'):
+            return Response({'detail': 'Only draft or returned records may be edited.'}, status=status.HTTP_409_CONFLICT)
 
         data = request.data
         woreda_id = data.get('woredaId') or data.get('woreda')
@@ -281,8 +302,9 @@ class TraderViewSet(viewsets.ModelViewSet):
             try:
                 woreda = Woreda.objects.get(id=woreda_id)
                 kebele = Kebele.objects.get(id=kebele_id)
-                if kebele.woreda_id != woreda.id:
-                    return Response({'detail': 'Invalid Woreda/Kebele combination.', 'code': 'INVALID_WOREDA_KEBELE_COMBINATION'}, status=status.HTTP_400_BAD_REQUEST)
+                location_error = self._location_scope_error(request, woreda, kebele)
+                if location_error:
+                    return location_error
                 trader.woreda = woreda
                 trader.kebele = kebele
             except (Woreda.DoesNotExist, Kebele.DoesNotExist):
@@ -294,11 +316,6 @@ class TraderViewSet(viewsets.ModelViewSet):
             trader.owner_full_name = data['ownerFullName']
         if 'phoneNumber' in data:
             trader.phone_number = data['phoneNumber']
-
-        # If resubmitting after correction
-        if trader.status in ['NEEDS_CORRECTION', 'RETURNED']:
-            trader.status = 'SUBMITTED'
-            trader.submitted_at = timezone.now()
 
         trader.save()
 
@@ -328,11 +345,13 @@ class TraderViewSet(viewsets.ModelViewSet):
 
         return Response(TraderSerializer(trader).data)
 
-    @action(detail=True, methods=['put', 'patch'], url_path='update-informal')
+    @action(detail=True, methods=['post', 'put', 'patch'], url_path='update-informal')
     def update_informal(self, request, trader_id=None):
         trader = self.get_object()
         if trader.trader_type != 'INFORMAL':
             return Response({'detail': 'Not an informal trader.', 'code': 'INVALID_TYPE'}, status=status.HTTP_400_BAD_REQUEST)
+        if trader.status not in ('DRAFT', 'NEEDS_CORRECTION', 'RETURNED'):
+            return Response({'detail': 'Only draft or returned records may be edited.'}, status=status.HTTP_409_CONFLICT)
 
         data = request.data
         woreda_id = data.get('woredaId') or data.get('woreda')
@@ -342,8 +361,9 @@ class TraderViewSet(viewsets.ModelViewSet):
             try:
                 woreda = Woreda.objects.get(id=woreda_id)
                 kebele = Kebele.objects.get(id=kebele_id)
-                if kebele.woreda_id != woreda.id:
-                    return Response({'detail': 'Invalid Woreda/Kebele combination.', 'code': 'INVALID_WOREDA_KEBELE_COMBINATION'}, status=status.HTTP_400_BAD_REQUEST)
+                location_error = self._location_scope_error(request, woreda, kebele)
+                if location_error:
+                    return location_error
                 trader.woreda = woreda
                 trader.kebele = kebele
             except (Woreda.DoesNotExist, Kebele.DoesNotExist):
@@ -354,10 +374,6 @@ class TraderViewSet(viewsets.ModelViewSet):
             trader.owner_full_name = data['fullName']
         if 'phoneNumber' in data:
             trader.phone_number = data['phoneNumber']
-
-        if trader.status in ['NEEDS_CORRECTION', 'RETURNED']:
-            trader.status = 'SUBMITTED'
-            trader.submitted_at = timezone.now()
 
         trader.save()
 
@@ -387,24 +403,27 @@ class TraderViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         trader = self.get_object()
-        trader_id = trader.trader_id
-        trader_name = trader.name
-
+        if trader.created_by_id != request.user.id:
+            return Response({'detail': 'You may only archive records you created.'},
+                            status=status.HTTP_403_FORBIDDEN)
+        if trader.status not in ('DRAFT', 'NEEDS_CORRECTION', 'RETURNED'):
+            return Response({'detail': 'Submitted or finalized records cannot be archived through delete.'},
+                            status=status.HTTP_409_CONFLICT)
         with transaction.atomic():
+            trader.status = 'ARCHIVED'
+            trader.save(update_fields=['status', 'updated_at'] if hasattr(trader, 'updated_at') else ['status'])
             AuditLog.objects.create(
-                action='DELETE_TRADER',
-                trader_id=trader_id,
-                details=f"Deleted trader '{trader_name}' ({trader.trader_type})",
-                user=request.user.username if request.user.is_authenticated else 'system',
+                action='ARCHIVE_TRADER',
+                trader_id=trader.trader_id,
+                details=f"Archived trader '{trader.name}' ({trader.trader_type}); record retained for audit.",
+                user=request.user.username,
             )
-            trader.delete()
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(TraderSerializer(trader).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='submit')
     def submit_record(self, request, trader_id=None):
         trader = self.get_object()
-        if trader.status not in ['DRAFT', 'NEEDS_CORRECTION']:
+        if trader.status not in ['DRAFT', 'NEEDS_CORRECTION', 'RETURNED']:
             return Response({'detail': f'Cannot submit record in status {trader.status}'}, status=status.HTTP_400_BAD_REQUEST)
 
         trader.status = 'SUBMITTED'
@@ -412,7 +431,7 @@ class TraderViewSet(viewsets.ModelViewSet):
         trader.save()
 
         AuditLog.objects.create(
-            action='UPDATE_TRADER',
+            action='SUBMIT_TRADER',
             trader_id=trader.trader_id,
             details=f"Submitted record for verification",
             user=request.user.username if request.user.is_authenticated else 'system',

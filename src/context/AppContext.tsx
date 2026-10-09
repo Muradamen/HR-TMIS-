@@ -9,13 +9,6 @@ import {
   InformalTraderDetails,
   TraderStatus
 } from '../types';
-import { 
-  SEED_TRADERS, 
-  SEED_WOREDAS, 
-  SEED_KEBELES, 
-  SEED_USERS, 
-  SEED_AUDIT_LOGS 
-} from '../data/seedData';
 import { traderService } from '../services/trader.service';
 import { locationService } from '../services/location.service';
 import { verificationService } from '../services/verification.service';
@@ -41,12 +34,12 @@ interface AppContextType {
   recordRecentSearch: (traderId: string) => void;
   clearRecentSearches: () => void;
   getRecentTraderObjects: () => Trader[];
-  login: (username: string, password: string) => { success: boolean; user?: User; error?: string };
+  login: (username: string, password: string) => Promise<{ success: boolean; user?: User; error?: string }>;
   logout: () => void;
-  setCurrentUser: (user: User) => void;
   showAlert: (type: AppAlert['type'], message: string) => void;
   dismissAlert: () => void;
   getTraderById: (traderId: string) => Trader | undefined;
+  cacheTraders: (items: Trader[]) => void;
   getWoredaName: (woredaId: number) => string;
   getKebeleName: (kebeleId: number) => string;
   registerLegalTrader: (details: LegalTraderDetails) => string;
@@ -64,46 +57,24 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 // LocalStorage is strictly reserved for non-authoritative UI preferences
 const UI_STORAGE_KEYS = {
-  CURRENT_USER: 'hr_tmis_user_v1',
-  AUTH_SESSION: 'hr_tmis_auth_session_v1',
   RECENT_SEARCHES: 'hr_tmis_recent_searches_v1',
 };
 
-const DEFAULT_USER_RECENT_SEARCHES: Record<number, string[]> = {
-  1: ['HTT-000001', 'HTT-000002', 'HTT-000003'], // Murad Amen (Data Encoder)
-  2: ['HTT-000001', 'HTT-000005', 'HTT-000006'], // Dr. Ahmed Hassen (Director)
-  3: ['HTT-000006', 'HTT-000002'],               // Fatuma Ali (Agency Leader)
-  4: ['HTT-000001', 'HTT-000002', 'HTT-000004'], // System Administrator
-};
+const DEFAULT_USER_RECENT_SEARCHES: Record<number, string[]> = {};
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(UI_STORAGE_KEYS.AUTH_SESSION) === 'true';
-    } catch {
-      return false;
-    }
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  const [currentUser, setCurrentUserState] = useState<User>({
+    id: 0, username: '', fullName: '', email: '', role: 'DATA_ENCODER', department: '',
   });
 
-  const [currentUser, setCurrentUserState] = useState<User>(() => {
-    try {
-      const saved = localStorage.getItem(UI_STORAGE_KEYS.CURRENT_USER);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const matched = SEED_USERS.find(u => u.id === parsed.id);
-        if (matched) return matched;
-      }
-      return SEED_USERS[0]; // Default to Murad Amen (Data Encoder)
-    } catch {
-      return SEED_USERS[0];
-    }
-  });
-
-  // Authoritative data initialized with seed baseline and hydrated from PostgreSQL
-  const [traders, setTraders] = useState<Trader[]>(SEED_TRADERS);
-  const [woredas, setWoredas] = useState<Woreda[]>(SEED_WOREDAS);
-  const [kebeles, setKebeles] = useState<Kebele[]>(SEED_KEBELES);
-  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(SEED_AUDIT_LOGS);
+  // Authoritative records come from the authenticated Django API; never trust browser seed data.
+  const [traders, setTraders] = useState<Trader[]>([]);
+  const [woredas, setWoredas] = useState<Woreda[]>([]);
+  const [kebeles, setKebeles] = useState<Kebele[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
 
   const [userRecentSearches, setUserRecentSearches] = useState<Record<number, string[]>>(() => {
     try {
@@ -116,54 +87,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [alert, setAlert] = useState<AppAlert | null>(null);
 
-  // Sync UI-only non-authoritative preferences
-  useEffect(() => {
-    localStorage.setItem(UI_STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
-  }, [currentUser]);
-
   useEffect(() => {
     localStorage.setItem(UI_STORAGE_KEYS.RECENT_SEARCHES, JSON.stringify(userRecentSearches));
   }, [userRecentSearches]);
 
-  // Hydrate authoritative PostgreSQL data from Django API
+  // Restore an existing server session, then load data only after authentication succeeds.
   const refreshAuthoritativeData = useCallback(async () => {
     try {
-      // 1. Fetch public administrative locations
-      const [woredasData, kebelesData] = await Promise.allSettled([
+      const authenticatedUser = await authService.getMe();
+      setCurrentUserState(authenticatedUser);
+      setIsAuthenticated(true);
+
+      const [woredasData, kebelesData, tradersData, auditData, reviewersData] = await Promise.allSettled([
         locationService.getWoredas(),
         locationService.getKebeles(),
-      ]);
-
-      if (woredasData.status === 'fulfilled' && Array.isArray(woredasData.value) && woredasData.value.length > 0) {
-        setWoredas(woredasData.value);
-      }
-      if (kebelesData.status === 'fulfilled' && Array.isArray(kebelesData.value) && kebelesData.value.length > 0) {
-        setKebeles(kebelesData.value);
-      }
-
-      // 2. Ensure session for active user
-      try {
-        await authService.login(currentUser.username, 'password123');
-      } catch {
-        // Session may already be valid
-      }
-
-      // 3. Fetch authenticated trader and audit data
-      const [tradersData, auditData] = await Promise.allSettled([
         traderService.getTraders(),
         auditService.getAuditLogs(),
+        authService.getReviewers(),
       ]);
-
-      if (tradersData.status === 'fulfilled' && Array.isArray(tradersData.value) && tradersData.value.length > 0) {
-        setTraders(tradersData.value);
-      }
-      if (auditData.status === 'fulfilled' && Array.isArray(auditData.value) && auditData.value.length > 0) {
-        setAuditLogs(auditData.value);
-      }
-    } catch (err) {
-      console.warn('API hydration info:', err);
+      setWoredas(woredasData.status === 'fulfilled' ? woredasData.value : []);
+      setKebeles(kebelesData.status === 'fulfilled' ? kebelesData.value : []);
+      setTraders(tradersData.status === 'fulfilled' ? tradersData.value : []);
+      setAuditLogs(auditData.status === 'fulfilled' ? auditData.value : []);
+      setUsers(reviewersData.status === 'fulfilled' ? reviewersData.value : []);
+    } catch {
+      setIsAuthenticated(false);
+      setTraders([]);
+      setWoredas([]);
+      setKebeles([]);
+      setAuditLogs([]);
+      setUsers([]);
     }
-  }, [currentUser.username]);
+  }, []);
 
   useEffect(() => {
     refreshAuthoritativeData();
@@ -213,13 +168,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAlert(null);
   };
 
-  const setCurrentUser = (user: User) => {
-    setCurrentUserState(user);
-    // Sync backend authentication with Django
-    authService.login(user.username, 'password123').catch(() => {});
-    showAlert('info', `Active user switched to ${user.fullName} (${user.role.replace(/_/g, ' ')})`);
-  };
-
   const generateNextTraderId = (currentTraders: Trader[]): string => {
     let maxId = 0;
     for (const t of currentTraders) {
@@ -233,6 +181,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const nextNum = maxId + 1;
     return `HTT-${nextNum.toString().padStart(6, '0')}`;
   };
+
+  const cacheTraders = useCallback((items: Trader[]) => {
+    setTraders(prev => {
+      const byId = new Map(prev.map(trader => [trader.traderId, trader]));
+      items.forEach(trader => byId.set(trader.traderId, trader));
+      return Array.from(byId.values());
+    });
+  }, []);
 
   const getTraderById = (traderId: string) => {
     return traders.find(t => t.traderId.toLowerCase() === traderId.toLowerCase());
@@ -272,7 +228,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Authoritative backend persistence to PostgreSQL
     traderService.createLegalTrader(details)
       .then(serverTrader => {
-        setTraders(prev => prev.map(t => t.traderId === anticipatedTraderId ? serverTrader : t));
+        setTraders(prev => [serverTrader, ...prev.filter(t => t.traderId !== anticipatedTraderId && t.traderId !== serverTrader.traderId)]);
         showAlert('success', `Legal Trader ${serverTrader.traderId} (${details.tradeName}) registered in PostgreSQL.`);
       })
       .catch((err: ApiError) => {
@@ -305,7 +261,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Authoritative backend persistence to PostgreSQL
     traderService.createInformalTrader(details)
       .then(serverTrader => {
-        setTraders(prev => prev.map(t => t.traderId === anticipatedTraderId ? serverTrader : t));
+        setTraders(prev => [serverTrader, ...prev.filter(t => t.traderId !== anticipatedTraderId && t.traderId !== serverTrader.traderId)]);
         showAlert('success', `Informal Trader ${serverTrader.traderId} (${details.fullName}) assessed and saved in PostgreSQL.`);
       })
       .catch((err: ApiError) => {
@@ -409,14 +365,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteTrader = (traderId: string) => {
-    setTraders(prev => prev.filter(t => t.traderId !== traderId));
-
     traderService.deleteTrader(traderId)
-      .then(() => {
-        showAlert('danger', `Trader ${traderId} deleted from PostgreSQL registry.`);
+      .then(archivedTrader => {
+        setTraders(prev => prev.map(t => t.traderId === traderId ? archivedTrader : t));
+        showAlert('success', `Trader ${traderId} archived; its audit history is retained.`);
       })
       .catch((err: ApiError) => {
-        showAlert('danger', err.message || `Failed to delete trader ${traderId}`);
+        showAlert('danger', err.message || `Failed to archive trader ${traderId}`);
         refreshAuthoritativeData();
       });
   };
@@ -443,37 +398,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
   };
 
-  const login = (usernameInput: string, passwordInput: string) => {
-    const cleanUsername = usernameInput.trim().toLowerCase();
-    const user = SEED_USERS.find(
-      u => u.username.toLowerCase() === cleanUsername || u.email.toLowerCase() === cleanUsername
-    );
-
-    if (!user) {
-      return { success: false, error: 'User account not found in Harari Region registry.' };
+  const login = async (usernameInput: string, passwordInput: string) => {
+    try {
+      const response = await authService.login(usernameInput.trim(), passwordInput);
+      const user = response.user;
+      setCurrentUserState(user);
+      setIsAuthenticated(true);
+      setUserRecentSearches(prev => ({ ...prev, [user.id]: prev[user.id] || [] }));
+      await refreshAuthoritativeData();
+      showAlert('success', `Welcome, ${user.fullName} (${user.role.replace(/_/g, ' ')})`);
+      return { success: true, user };
+    } catch (error: any) {
+      setIsAuthenticated(false);
+      return { success: false, error: error?.message || 'Invalid credentials.' };
     }
-
-    const validPassword = user.password || 'password123';
-    if (passwordInput !== validPassword && passwordInput !== 'password123' && passwordInput !== 'admin') {
-      return { success: false, error: 'Incorrect password entered.' };
-    }
-
-    setCurrentUserState(user);
-    setIsAuthenticated(true);
-    localStorage.setItem(UI_STORAGE_KEYS.AUTH_SESSION, 'true');
-    localStorage.setItem(UI_STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
-
-    // Authenticate with Django backend to establish session cookie
-    authService.login(user.username, passwordInput).catch(() => {});
-
-    showAlert('success', `Welcome, ${user.fullName} (${user.role.replace(/_/g, ' ')})`);
-    return { success: true, user };
   };
 
-  const logout = () => {
-    authService.logout().catch(() => {});
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch {
+      // Clear local UI state even if the session has already expired.
+    }
     setIsAuthenticated(false);
-    localStorage.removeItem(UI_STORAGE_KEYS.AUTH_SESSION);
+    setCurrentUserState({ id: 0, username: '', fullName: '', email: '', role: 'DATA_ENCODER', department: '' });
+    setTraders([]);
+    setWoredas([]);
+    setKebeles([]);
+    setAuditLogs([]);
     showAlert('info', 'You have been signed out successfully.');
   };
 
@@ -488,7 +440,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         traders,
         woredas,
         kebeles,
-        users: SEED_USERS,
+        users,
         currentUser,
         isAuthenticated,
         auditLogs,
@@ -499,10 +451,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         getRecentTraderObjects,
         login,
         logout,
-        setCurrentUser,
         showAlert,
         dismissAlert,
         getTraderById,
+        cacheTraders,
         getWoredaName,
         getKebeleName,
         registerLegalTrader,

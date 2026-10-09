@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { reportsService } from '../../services/reports.service';
+import type { DashboardMetrics } from '../../services/reports.service';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/context';
 
@@ -15,20 +17,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const { traders, getWoredaName, getKebeleName, getRecentTraderObjects, clearRecentSearches, currentUser } = useApp();
   const { t } = useTranslation();
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
 
-  const totalTraders = traders.length;
+  useEffect(() => {
+    let active = true;
+    reportsService.getDashboardMetrics()
+      .then(data => { if (active) setMetrics(data); })
+      .catch(() => { if (active) setMetrics(null); });
+    return () => { active = false; };
+  }, [currentUser.id, currentUser.role]);
+
+  const totalTraders = metrics?.totalTraders ?? traders.length;
   const legalTraders = traders.filter(t => t.traderType === 'LEGAL');
   const informalTraders = traders.filter(t => t.traderType === 'INFORMAL');
-  const pendingTraders = traders.filter(t => t.status === 'PENDING');
+  const pendingTraders = traders.filter(t => ['PENDING', 'SUBMITTED', 'UNDER_REVIEW'].includes(t.status));
   const approvedTraders = traders.filter(t => t.status === 'APPROVED');
   const returnedTraders = traders.filter(t => t.status === 'RETURNED');
 
   // Informal Metrics
-  const readyForTIN = informalTraders.filter(
+  const legalCount = metrics?.legalCount ?? legalTraders.length;
+  const informalCount = metrics?.informalCount ?? informalTraders.length;
+  const pendingCount = metrics?.pendingCount ?? pendingTraders.length;
+  const approvedCount = metrics?.approvedCount ?? approvedTraders.length;
+  const returnedCount = metrics?.returnedCount ?? returnedTraders.length;
+  const readyForTIN = metrics?.readyForTinCount ?? informalTraders.filter(
     t => t.informalDetails?.formalizationStatusRecommendation === 'READY_FOR_TIN_MICRO_ENTERPRISE'
   ).length;
 
-  const totalInformalCapital = informalTraders.reduce(
+  const totalInformalCapital = metrics?.totalInformalCapital ?? informalTraders.reduce(
     (sum, t) => sum + (t.informalDetails?.estimatedCapitalAssets || 0),
     0
   );
@@ -47,6 +63,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </p>
         </div>
         <div className="d-flex gap-2">
+          {currentUser.role === 'DATA_ENCODER' && (
           <button
             className="btn btn-primary d-flex align-items-center gap-2 shadow-sm"
             onClick={onOpenRegisterType}
@@ -54,6 +71,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <i className="bi bi-plus-lg"></i>
             <span>{t('nav.registerTrader', 'Register Trader')}</span>
           </button>
+          )}
         </div>
       </div>
 
@@ -80,7 +98,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="col-lg-3 col-6">
           <div className="small-box bg-success">
             <div className="inner">
-              <h3>{legalTraders.length}</h3>
+              <h3>{legalCount}</h3>
               <p>{t('dashboard.legalTraders', 'Legal & Formal Traders')}</p>
             </div>
             <div className="icon">
@@ -98,7 +116,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="col-lg-3 col-6">
           <div className="small-box bg-warning text-dark">
             <div className="inner">
-              <h3>{informalTraders.length}</h3>
+              <h3>{informalCount}</h3>
               <p>{t('dashboard.informalTraders', 'Informal Traders Captured')}</p>
             </div>
             <div className="icon">
@@ -116,7 +134,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="col-lg-3 col-6">
           <div className="small-box bg-danger">
             <div className="inner">
-              <h3>{pendingTraders.length}</h3>
+              <h3>{pendingCount}</h3>
               <p>{t('dashboard.pendingVerification', 'Pending Verification')}</p>
             </div>
             <div className="icon">
@@ -188,10 +206,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     {t('dashboard.approvalRate', 'Verification Approval Rate')}
                   </div>
                   <h4 className="fw-bold mb-0 mt-1">
-                    {totalTraders > 0 ? Math.round((approvedTraders.length / totalTraders) * 100) : 0}%
+                    {totalTraders > 0 ? Math.round((approvedCount / totalTraders) * 100) : 0}%
                   </h4>
                   <small className="text-muted">
-                    {approvedTraders.length} {t('status.APPROVED', 'approved')}, {returnedTraders.length} {t('status.RETURNED', 'returned')}
+                    {approvedCount} {t('status.APPROVED', 'approved')}, {returnedCount} {t('status.RETURNED', 'returned')}
                   </small>
                 </div>
                 <div className="bg-success bg-opacity-10 text-success p-3 rounded-circle">
@@ -422,7 +440,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <div
                     className="progress-bar bg-success"
                     style={{
-                      width: informalTraders.length > 0 ? `${(readyForTIN / informalTraders.length) * 100}%` : '0%',
+                      width: informalCount > 0 ? `${(readyForTIN / informalCount) * 100}%` : '0%',
                     }}
                   ></div>
                 </div>
@@ -444,12 +462,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     className="progress-bar bg-warning"
                     style={{
                       width:
-                        informalTraders.length > 0
+                        informalCount > 0
                           ? `${
                               (informalTraders.filter(
                                 t => t.informalDetails?.formalizationStatusRecommendation === 'NEEDS_AWARENESS_LEGAL_SUPPORT'
                               ).length /
-                                informalTraders.length) *
+                                informalCount) *
                               100
                             }%`
                           : '0%',
@@ -474,12 +492,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     className="progress-bar bg-danger"
                     style={{
                       width:
-                        informalTraders.length > 0
+                        informalCount > 0
                           ? `${
                               (informalTraders.filter(
                                 t => t.informalDetails?.formalizationStatusRecommendation === 'FOLLOW_UP_REQUIRED'
                               ).length /
-                                informalTraders.length) *
+                                informalCount) *
                               100
                             }%`
                           : '0%',

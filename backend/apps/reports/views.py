@@ -7,12 +7,12 @@ from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 
 from apps.traders.models import Trader, LegalTrader, InformalTrader
 from apps.formalization.models import FormalizationAssessment
 from apps.locations.models import Woreda, Kebele, Region
 from apps.audit.models import AuditLog
+from apps.core.permissions import IsReportExporter
 
 # Import openpyxl for Excel export
 import openpyxl
@@ -166,51 +166,35 @@ def get_trader_row(t):
     ]
 
 
-def get_client_ip(request):
-    """Safely extracts client IP address from request headers."""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        return x_forwarded_for.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR')
-
-
-def get_user_scoped_traders_queryset(user):
+def get_filtered_traders_queryset(request):
     """
-    Returns base QuerySet restricted to records the authenticated user is authorized to access:
-    - Unauthenticated: empty.
-    - Private drafts created by other officers are excluded.
-    - Data Encoders with an assigned Woreda are restricted to records in that Woreda.
-    - Regional roles (Director, Agency Leader, Admin) access all official records in Harari Region.
+    Retrieves and filters Trader records.
+    Supports either explicit 'ids' (for selected records export)
+    or combined query/filter parameters (for filtered export).
+    Enforces security: only authorized authenticated users can access.
     """
-    if not user or not user.is_authenticated:
-        return Trader.objects.none()
-
-    qs = Trader.objects.select_related(
+    queryset = Trader.objects.select_related(
         'woreda', 'woreda__region', 'kebele', 'created_by', 'verified_by', 'assigned_director',
         'legal_details', 'informal_details'
     ).all().order_by('trader_id')
 
-    # Exclude drafts created by other users
-    qs = qs.filter(Q(created_by=user) | ~Q(status='DRAFT'))
-
-    # Restrict Data Encoder to their assigned Woreda if specified
-    if user.role == 'DATA_ENCODER' and getattr(user, 'assigned_woreda_id', None):
-        qs = qs.filter(woreda_id=user.assigned_woreda_id)
-
-    return qs
-
-
-def get_filtered_traders_queryset(request):
-    """
-    Retrieves and filters Trader records.
-    Enforces server-side authorization: records are scoped to request.user's authorized domain.
-    Supports either explicit 'ids' (for selected records export)
-    or combined query/filter parameters (for filtered export).
-    """
-    queryset = get_user_scoped_traders_queryset(request.user)
+    # Apply role/territory restrictions before any client-supplied filters or selected IDs.
+    user = request.user
+    if user.role == 'DATA_ENCODER' or user.groups.filter(name='DATA_ENCODER').exists():
+        queryset = queryset.filter(created_by=user)
+        if user.assigned_woreda_id:
+            queryset = queryset.filter(woreda_id=user.assigned_woreda_id)
+    elif user.role == 'DIRECTOR' or user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists():
+        if user.assigned_woreda_id:
+            queryset = queryset.filter(woreda_id=user.assigned_woreda_id)
+    elif user.role != 'AGENCY_LEADER' and not user.groups.filter(name='AGENCY_LEADER').exists():
+        return Trader.objects.none(), False, 0, ['No export access']
 
     data = request.data if request.method == 'POST' and isinstance(request.data, dict) else {}
     params = request.query_params
+    status_filter = data.get('status') or params.get('status')
+    if not status_filter or status_filter == 'ALL':
+        queryset = queryset.exclude(status='ARCHIVED')
 
     # Check for explicit IDs parameter
     ids_param = None
@@ -234,7 +218,6 @@ def get_filtered_traders_queryset(request):
         if not ids_clean:
             return queryset.none(), True, 0, ["Selected Records: 0"]
 
-        # Scope strictly within authorized QuerySet
         selected_qs = queryset.filter(trader_id__in=ids_clean)
         count = selected_qs.count()
         return selected_qs, True, count, [f"Selected Records: {count}"]
@@ -325,69 +308,95 @@ def get_filtered_traders_queryset(request):
 
 
 class DashboardStatsView(APIView):
-    authentication_classes = [SessionAuthentication, BasicAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReportExporter]
 
     def get(self, request):
-        total_traders = Trader.objects.count()
-        legal_count = Trader.objects.filter(trader_type='LEGAL').count()
-        informal_count = Trader.objects.filter(trader_type='INFORMAL').count()
+        traders = Trader.objects.all()
+        is_encoder = (
+            request.user.role == 'DATA_ENCODER' or
+            request.user.groups.filter(name='DATA_ENCODER').exists()
+        )
+        is_director = (
+            request.user.role == 'DIRECTOR' or
+            request.user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists()
+        )
+        if is_encoder:
+            traders = traders.filter(created_by=request.user)
+            if request.user.assigned_woreda_id:
+                traders = traders.filter(woreda_id=request.user.assigned_woreda_id)
+        elif is_director and request.user.assigned_woreda_id:
+            traders = traders.filter(woreda_id=request.user.assigned_woreda_id)
 
-        pending_count = Trader.objects.filter(status='SUBMITTED').count()
-        under_review_count = Trader.objects.filter(status='UNDER_REVIEW').count()
-        approved_count = Trader.objects.filter(status='APPROVED').count()
-        returned_count = Trader.objects.filter(status__in=['NEEDS_CORRECTION', 'RETURNED']).count()
-        rejected_count = Trader.objects.filter(status='REJECTED').count()
+        total_traders = traders.count()
+        legal_count = traders.filter(trader_type='LEGAL').count()
+        informal_count = traders.filter(trader_type='INFORMAL').count()
+        pending_count = traders.filter(status='SUBMITTED').count()
+        under_review_count = traders.filter(status='UNDER_REVIEW').count()
+        approved_count = traders.filter(status='APPROVED').count()
+        returned_count = traders.filter(status__in=['NEEDS_CORRECTION', 'RETURNED']).count()
+        rejected_count = traders.filter(status='REJECTED').count()
 
-        # Breakdown by Woreda
         woredas = Woreda.objects.filter(is_active=True).order_by('name')
+        if is_encoder:
+            woredas = woredas.filter(id__in=traders.values_list('woreda_id', flat=True).distinct())
+        elif is_director and request.user.assigned_woreda_id:
+            woredas = woredas.filter(id=request.user.assigned_woreda_id)
         distribution_by_woreda = []
-        for w in woredas:
-            w_total = Trader.objects.filter(woreda=w).count()
-            w_legal = Trader.objects.filter(woreda=w, trader_type='LEGAL').count()
-            w_informal = Trader.objects.filter(woreda=w, trader_type='INFORMAL').count()
+        woreda_distribution = {}
+        for woreda in woredas:
+            woreda_traders = traders.filter(woreda=woreda)
+            total = woreda_traders.count()
+            legal = woreda_traders.filter(trader_type='LEGAL').count()
+            informal = woreda_traders.filter(trader_type='INFORMAL').count()
             distribution_by_woreda.append({
-                'woredaId': w.id,
-                'woredaName': w.name,
-                'woredaCode': w.code,
-                'total': w_total,
-                'legal': w_legal,
-                'informal': w_informal,
+                'woredaId': woreda.id, 'woredaName': woreda.name, 'woredaCode': woreda.code,
+                'total': total, 'legal': legal, 'informal': informal,
             })
+            woreda_distribution[woreda.name] = total
 
-        # Breakdown by Sector (Legal)
         sector_counts = (
-            LegalTrader.objects.values('business_sector')
-            .annotate(count=Count('id'))
-            .order_by('-count')
+            LegalTrader.objects.filter(trader__in=traders)
+            .values('business_sector').annotate(count=Count('id')).order_by('-count')
         )
         distribution_by_sector = [
-            {'sector': item['business_sector'], 'count': item['count']}
-            for item in sector_counts
+            {'sector': item['business_sector'], 'count': item['count']} for item in sector_counts
         ]
+        sector_distribution = {
+            item['business_sector']: item['count'] for item in sector_counts
+        }
 
-        # Informal Capital Summary
-        informal_agg = InformalTrader.objects.aggregate(
+        informal_records = InformalTrader.objects.filter(trader__in=traders)
+        informal_agg = informal_records.aggregate(
             totalCapital=Sum('estimated_capital_assets'),
             averageCapital=Avg('estimated_capital_assets'),
-            count=Count('id')
+            count=Count('id'),
         )
         informal_capital_summary = {
             'totalCapital': float(informal_agg['totalCapital'] or 0),
             'averageCapital': float(informal_agg['averageCapital'] or 0),
             'count': informal_agg['count'] or 0,
         }
-
-        # Formalization breakdown
+        ready_for_tin = informal_records.filter(
+            formalization_status_recommendation='READY_FOR_TIN_MICRO_ENTERPRISE'
+        ).count()
         formalization_counts = (
-            FormalizationAssessment.objects.values('status')
-            .annotate(count=Count('id'))
-            .order_by('status')
+            FormalizationAssessment.objects.filter(trader__in=traders)
+            .values('status').annotate(count=Count('id')).order_by('status')
         )
         formalization_summary = {item['status']: item['count'] for item in formalization_counts}
 
+        # Include the frontend's established metric names plus legacy aliases.
         return Response({
             'totalTraders': total_traders,
+            'legalCount': legal_count,
+            'informalCount': informal_count,
+            'pendingCount': pending_count + under_review_count,
+            'approvedCount': approved_count,
+            'returnedCount': returned_count,
+            'totalInformalCapital': informal_capital_summary['totalCapital'],
+            'readyForTinCount': ready_for_tin,
+            'woredaDistribution': woreda_distribution,
+            'sectorDistribution': sector_distribution,
             'legalTradersCount': legal_count,
             'informalTradersCount': informal_count,
             'pendingVerificationCount': pending_count + under_review_count,
@@ -407,8 +416,7 @@ class ExportCsvView(APIView):
     Supports both GET (with query parameters) and POST (with JSON payload).
     Enforces formula injection protection and prepends UTF-8 BOM.
     """
-    authentication_classes = [SessionAuthentication, BasicAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReportExporter]
 
     def _export(self, request):
         data = request.data if request.method == 'POST' and isinstance(request.data, dict) else {}
@@ -418,8 +426,9 @@ class ExportCsvView(APIView):
 
         queryset, is_selected, count, filters_applied = get_filtered_traders_queryset(request)
 
-        if is_selected and count == 0:
-            return Response({'detail': 'No trader records selected for export.', 'code': 'NO_RECORDS_FOR_EXPORT'}, status=status.HTTP_400_BAD_REQUEST)
+        if count == 0:
+            error_msg = 'No trader records selected for export.' if is_selected else 'No trader records match the selected filter criteria.'
+            return Response({'detail': error_msg, 'code': 'NO_RECORDS_FOR_EXPORT'}, status=status.HTTP_400_BAD_REQUEST)
 
         response = HttpResponse(content_type='text/csv; charset=utf-8')
         scope_str = 'Selected' if is_selected else 'Filtered'
@@ -435,12 +444,10 @@ class ExportCsvView(APIView):
             row = [sanitize_formula_injection(cell) for cell in get_trader_row(t)]
             writer.writerow(row)
 
-        filter_desc = " | ".join(filters_applied)
         AuditLog.objects.create(
             action='EXPORT_CSV',
-            details=f"Exported {count} records to CSV in language {lang} (Scope: {scope_str}). Filters: {filter_desc}",
+            details=f"Exported {count} records to CSV in language {lang} (Scope: {scope_str})",
             user=request.user.username,
-            ip_address=get_client_ip(request),
         )
 
         return response
@@ -459,8 +466,7 @@ class ExportExcelView(APIView):
     styled header row (dark navy #1E3A8A, bold white text), data borders,
     and protection against spreadsheet formula injection.
     """
-    authentication_classes = [SessionAuthentication, BasicAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReportExporter]
 
     def _export(self, request):
         data = request.data if request.method == 'POST' and isinstance(request.data, dict) else {}
@@ -470,8 +476,9 @@ class ExportExcelView(APIView):
 
         queryset, is_selected, count, filters_applied = get_filtered_traders_queryset(request)
 
-        if is_selected and count == 0:
-            return Response({'detail': 'No trader records selected for export.', 'code': 'NO_RECORDS_FOR_EXPORT'}, status=status.HTTP_400_BAD_REQUEST)
+        if count == 0:
+            error_msg = 'No trader records selected for export.' if is_selected else 'No trader records match the selected filter criteria.'
+            return Response({'detail': error_msg, 'code': 'NO_RECORDS_FOR_EXPORT'}, status=status.HTTP_400_BAD_REQUEST)
 
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -568,12 +575,10 @@ class ExportExcelView(APIView):
         scope_filename = 'Selected' if is_selected else 'Filtered'
         response['Content-Disposition'] = f'attachment; filename="HT-TMIS_Traders_{scope_filename}_{lang}_{timezone.now().strftime("%Y%m%d_%H%M")}.xlsx"'
 
-        filter_desc = " | ".join(filters_applied)
         AuditLog.objects.create(
             action='EXPORT_EXCEL',
-            details=f"Exported {count} records to Excel in language {lang} (Scope: {scope_filename}). Filters: {filter_desc}",
+            details=f"Exported {count} records to Excel in language {lang} (Scope: {scope_filename})",
             user=request.user.username,
-            ip_address=get_client_ip(request),
         )
 
         return response
@@ -591,10 +596,8 @@ class ExportPdfView(APIView):
     Includes official agency heading, report title, generation date, active filters,
     record count, professionally formatted table with Ethiopic and Latin character support,
     and running page numbers ("Page X of Y") via NumberedCanvas.
-    Enforces a configurable maximum row limit (500 records) to protect server memory.
     """
-    authentication_classes = [SessionAuthentication, BasicAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReportExporter]
 
     def _export(self, request):
         data = request.data if request.method == 'POST' and isinstance(request.data, dict) else {}
@@ -604,20 +607,9 @@ class ExportPdfView(APIView):
 
         queryset, is_selected, count, filters_applied = get_filtered_traders_queryset(request)
 
-        if is_selected and count == 0:
-            return Response({'detail': 'No trader records selected for export.', 'code': 'NO_RECORDS_FOR_EXPORT'}, status=status.HTTP_400_BAD_REQUEST)
-
-        MAX_PDF_RECORDS = 500
-        if count > MAX_PDF_RECORDS:
-            return Response(
-                {
-                    'detail': f'PDF export limit exceeded: {count} records exceeds the maximum allowed limit of {MAX_PDF_RECORDS} records. Please narrow your search/filters or use Excel export (.xlsx) for large datasets.',
-                    'code': 'PDF_LIMIT_EXCEEDED',
-                    'max_limit': MAX_PDF_RECORDS,
-                    'count': count,
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        if count == 0:
+            error_msg = 'No trader records selected for export.' if is_selected else 'No trader records match the selected filter criteria.'
+            return Response({'detail': error_msg, 'code': 'NO_RECORDS_FOR_EXPORT'}, status=status.HTTP_400_BAD_REQUEST)
 
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -783,46 +775,33 @@ class ExportPdfView(APIView):
             ]
         ]
 
-        if count == 0:
+        for idx, t in enumerate(queryset, start=1):
+            is_legal = t.trader_type == 'LEGAL'
+            legal = getattr(t, 'legal_details', None) if is_legal else None
+            informal = getattr(t, 'informal_details', None) if not is_legal else None
+
+            woreda_name = t.woreda.name if t.woreda else "-"
+            kebele_name = t.kebele.name if t.kebele else ""
+            location_str = f"{woreda_name}<br/><font color='#64748B'>{kebele_name}</font>"
+
+            tin_or_id = (legal.tin if legal and legal.tin else "") or (informal.national_id_resident_id if informal and informal.national_id_resident_id else "-")
+            phone_str = t.phone_number or "-"
+
+            # Status pill styling in table
+            status_display = t.get_status_display()
+            type_display = t.get_trader_type_display()
+
             table_data.append([
-                Paragraph("-", td_style),
-                Paragraph("-", td_style),
-                Paragraph("No records found", td_style),
-                Paragraph("-", td_style),
-                Paragraph("-", td_style),
-                Paragraph("-", td_style),
-                Paragraph("-", td_style),
-                Paragraph("-", td_style),
-                Paragraph("-", td_style),
+                Paragraph(str(idx), td_style),
+                Paragraph(f"<b>{t.trader_id}</b>", td_bold_style),
+                Paragraph(t.name or "-", td_bold_style),
+                Paragraph(t.owner_full_name or "-", td_style),
+                Paragraph(type_display, td_style),
+                Paragraph(status_display, td_style),
+                Paragraph(location_str, td_style),
+                Paragraph(tin_or_id, td_style),
+                Paragraph(phone_str, td_style),
             ])
-        else:
-            for idx, t in enumerate(queryset, start=1):
-                is_legal = t.trader_type == 'LEGAL'
-                legal = getattr(t, 'legal_details', None) if is_legal else None
-                informal = getattr(t, 'informal_details', None) if not is_legal else None
-
-                woreda_name = t.woreda.name if t.woreda else "-"
-                kebele_name = t.kebele.name if t.kebele else ""
-                location_str = f"{woreda_name}<br/><font color='#64748B'>{kebele_name}</font>"
-
-                tin_or_id = (legal.tin if legal and legal.tin else "") or (informal.national_id_resident_id if informal and informal.national_id_resident_id else "-")
-                phone_str = t.phone_number or "-"
-
-                # Status pill styling in table
-                status_display = t.get_status_display()
-                type_display = t.get_trader_type_display()
-
-                table_data.append([
-                    Paragraph(str(idx), td_style),
-                    Paragraph(f"<b>{t.trader_id}</b>", td_bold_style),
-                    Paragraph(t.name or "-", td_bold_style),
-                    Paragraph(t.owner_full_name or "-", td_style),
-                    Paragraph(type_display, td_style),
-                    Paragraph(status_display, td_style),
-                    Paragraph(location_str, td_style),
-                    Paragraph(tin_or_id, td_style),
-                    Paragraph(phone_str, td_style),
-                ])
 
         main_table = Table(table_data, colWidths=col_widths, repeatRows=1)
         main_table.setStyle(TableStyle([
@@ -843,12 +822,10 @@ class ExportPdfView(APIView):
         scope_filename = 'Selected' if is_selected else 'Filtered'
         response['Content-Disposition'] = f'attachment; filename="HT-TMIS_Traders_{scope_filename}_{lang}_{timezone.now().strftime("%Y%m%d_%H%M")}.pdf"'
 
-        filter_desc = " | ".join(filters_applied)
         AuditLog.objects.create(
             action='EXPORT_PDF',
-            details=f"Exported {count} records to PDF in language {lang} (Scope: {scope_filename}). Filters: {filter_desc}",
+            details=f"Exported {count} records to PDF in language {lang} (Scope: {scope_filename})",
             user=request.user.username,
-            ip_address=get_client_ip(request),
         )
 
         return response
@@ -861,21 +838,31 @@ class ExportPdfView(APIView):
 
 
 class CertificatePdfView(APIView):
-    """
-    Exports official Trade Registration Certificate PDF for approved legal traders.
-    Enforces server-side QuerySet authorization scoped by user role and assigned territory.
-    CSRF is validated for session-authenticated POST requests.
-    """
-    authentication_classes = [SessionAuthentication, BasicAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReportExporter]
 
-    def _export_certificate(self, request, trader_id):
-        scoped_qs = get_user_scoped_traders_queryset(request.user)
+    def get(self, request, trader_id):
         try:
-            trader = scoped_qs.select_related(
+            trader = Trader.objects.select_related(
                 'woreda', 'kebele', 'legal_details', 'informal_details', 'verified_by'
             ).get(trader_id=trader_id)
         except Trader.DoesNotExist:
+            return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        is_encoder = (
+            request.user.role == 'DATA_ENCODER' or
+            request.user.groups.filter(name='DATA_ENCODER').exists()
+        )
+        is_director = (
+            request.user.role == 'DIRECTOR' or
+            request.user.groups.filter(name='DIRECTOR_OF_TRADER_CONTROL').exists()
+        )
+        if is_encoder and trader.created_by_id != request.user.id:
+            return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
+        if (
+            (is_encoder or is_director)
+            and request.user.assigned_woreda_id
+            and trader.woreda_id != request.user.assigned_woreda_id
+        ):
             return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         # Enforce legal registration condition
@@ -885,8 +872,7 @@ class CertificatePdfView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        data = request.data if request.method == 'POST' and isinstance(request.data, dict) else {}
-        lang = (data.get('lang') or request.query_params.get('lang', 'en')).lower()
+        lang = request.query_params.get('lang', 'en').lower()
         legal = trader.legal_details
 
         buffer = io.BytesIO()
@@ -1032,9 +1018,3 @@ class CertificatePdfView(APIView):
         )
 
         return response
-
-    def get(self, request, trader_id):
-        return self._export_certificate(request, trader_id)
-
-    def post(self, request, trader_id):
-        return self._export_certificate(request, trader_id)

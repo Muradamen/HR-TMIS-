@@ -3,6 +3,8 @@ import { User } from '../types';
 
 export const authService = {
   login: async (username: string, password: string): Promise<{ user: User }> => {
+    // Bootstrap the CSRF cookie before the CSRF-protected session login POST.
+    await api.get('/auth/csrf/');
     return api.post('/auth/login/', { username, password });
   },
 
@@ -12,5 +14,9 @@ export const authService = {
 
   getMe: async (): Promise<User> => {
     return api.get('/auth/me/');
+  },
+
+  getReviewers: async (): Promise<User[]> => {
+    return api.get('/auth/reviewers/');
   },
 };

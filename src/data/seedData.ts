@@ -4,7 +4,6 @@ export const SEED_USERS: User[] = [
   {
     id: 1,
     username: 'murad.amen',
-    password: 'password123',
     fullName: 'Murad Amen',
     email: 'murad.amen@harari.gov.et',
     role: 'DATA_ENCODER',
@@ -13,7 +12,6 @@ export const SEED_USERS: User[] = [
   {
     id: 2,
     username: 'dr.ahmed.hassen',
-    password: 'password123',
     fullName: 'Dr. Ahmed Hassen',
     email: 'ahmed.hassen@harari.gov.et',
     role: 'DIRECTOR',
@@ -22,7 +20,6 @@ export const SEED_USERS: User[] = [
   {
     id: 3,
     username: 'fatuma.ali',
-    password: 'password123',
     fullName: 'Fatuma Ali',
     email: 'fatuma.ali@harari.gov.et',
     role: 'AGENCY_LEADER',
@@ -31,7 +28,6 @@ export const SEED_USERS: User[] = [
   {
     id: 4,
     username: 'admin',
-    password: 'password123',
     fullName: 'System Administrator',
     email: 'admin@harari.gov.et',
     role: 'SYSTEM_ADMINISTRATOR',

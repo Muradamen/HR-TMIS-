@@ -1,0 +1,106 @@
+# Translation of HT-TMIS to Afaan Oromoo (Oromo)
+# Copyright (C) 2026 Harari People Regional State Trade & Industry Development Agency
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: HT-TMIS 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 10:00+0300\n"
+"PO-Revision-Date: 2026-10-09 10:00+0300\n"
+"Last-Translator: Harari Regional Trade Bureau\n"
+"Language-Team: Afaan Oromoo\n"
+"Language: om\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Harari Region Trader Management Information System"
+msgstr "Sirna Odeeffannoo Bulchiinsa Daldaltoota Naannoo Hararii"
+
+msgid "Dashboard Overview"
+msgstr "Ibsa Waliigalaa (Daashboordii)"
+
+msgid "All Registered Traders"
+msgstr "Daldaltoota Hundumaa Galmaa'an"
+
+msgid "Legal Traders Registry"
+msgstr "Galmee Daldaltoota Seera Qabeeyyii"
+
+msgid "Informal Traders Assessment Directory"
+msgstr "Galmee Qorannoo Daldaltoota Al-idilee"
+
+msgid "Verification & Approval Queue"
+msgstr "Tarree Mirkaneessaa fi Hayyamaa"
+
+msgid "Register New Trader"
+msgstr "Daldalaa Haaraa Galmeessi"
+
+msgid "Register Legal Trader"
+msgstr "Daldalaa Seera Qabeessa Galmeessi"
+
+msgid "Informal Trader Assessment"
+msgstr "Qorannoo Daldala Al-idilee"
+
+msgid "Trader Record & Dossier"
+msgstr "Galmee Guutuu Daldalaa"
+
+msgid "Harari Administrative Locations"
+msgstr "Iddoowwan Bulchiinsa Naannoo Hararii"
+
+msgid "Reports & Statistical Insights"
+msgstr "Gabaasotaafi Qaaccessa Istaatiksii"
+
+msgid "System Audit Trail & Compliance"
+msgstr "Galmee Hordoffii Hojii fi Qulqullinaa"
+
+msgid "Approved"
+msgstr "Mirkanaa'e"
+
+msgid "Pending Verification"
+msgstr "Eeggachaa Jira"
+
+msgid "Returned"
+msgstr "Deebi'e"
+
+msgid "Legal Trader"
+msgstr "Daldalaa Seera Qabeessa"
+
+msgid "Informal Trader"
+msgstr "Daldalaa Seeraan Hin Galmoofne"
+
+msgid "Trade Name / Company Name"
+msgstr "Maqaa Daldalaa / Dhaabbataa"
+
+msgid "Owner Full Name"
+msgstr "Maqaa Guutuu Abbaa Qabeenyaa"
+
+msgid "TIN (Tax Number)"
+msgstr "Lakkoofsa Gibira Kaffalaa (TIN)"
+
+msgid "Trade Registration Number"
+msgstr "Lakkoofsa Galmee Daldalaa"
+
+msgid "Woreda"
+msgstr "Aanaa (Woreda)"
+
+msgid "Kebele"
+msgstr "Ganda (Kebele)"
+
+msgid "Export to CSV"
+msgstr "Gadi Baasi (CSV)"
+
+msgid "Print Official Dossier"
+msgstr "Waraqaa Ragaa Maxxansi"
+
+msgid "Data Encoder"
+msgstr "Galmeessaa Deetaa"
+
+msgid "Director of Trader Control"
+msgstr "Daarektara To'annoo Daldalaa"
+
+msgid "Agency Leader"
+msgstr "Hogganaa Eejansii"
+
+msgid "System Administrator"
+msgstr "Bulchaa Sirnaa (Admin)"

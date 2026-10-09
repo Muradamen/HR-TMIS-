@@ -8,11 +8,11 @@ interface LoginPageProps {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
-  const { login, users } = useApp();
+  const { login } = useApp();
   const { language, setLanguage, t } = useTranslation();
 
-  const [username, setUsername] = useState('murad.amen');
-  const [password, setPassword] = useState('password123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,29 +30,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-
-    setTimeout(() => {
-      const result = login(username, password);
-      setIsLoading(false);
+    try {
+      const result = await login(username, password);
       if (result.success && result.user) {
         onLoginSuccess(result.user.role);
       } else {
         setError(result.error ? t('auth.invalidCreds', result.error) : t('auth.invalidCreds', 'Invalid credentials'));
       }
-    }, 250);
-  };
-
-  const handleQuickSelect = (uName: string, uPass: string) => {
-    setUsername(uName);
-    setPassword(uPass);
-    setError(null);
-    const result = login(uName, uPass);
-    if (result.success && result.user) {
-      onLoginSuccess(result.user.role);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -236,7 +226,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   <input
                     type="text"
                     className="form-control border-start-0"
-                    placeholder="e.g. murad.amen or admin"
+                    placeholder="Username or official email"
                     value={username}
                     onChange={e => setUsername(e.target.value)}
                     required
@@ -250,9 +240,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   <label className="form-label fw-semibold text-dark small text-uppercase mb-0">
                     {t('auth.passwordLabel', 'System Password')}
                   </label>
-                  <small className="text-muted" style={{ fontSize: '0.75rem' }}>
-                    {t('auth.defaultHint', 'Default: password123')}
-                  </small>
                 </div>
                 <div className="input-group">
                   <span className="input-group-text bg-light text-muted border-end-0">
@@ -296,57 +283,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               </button>
             </form>
 
-            {/* Quick-fill Role Profiles */}
-            <div className="mt-4 pt-4 border-top">
-              <div className="d-flex align-items-center justify-content-between mb-2">
-                <span className="text-muted small fw-bold text-uppercase" style={{ fontSize: '0.72rem' }}>
-                  {t('auth.quickSelectTitle', 'Quick Demo Login (Select Role):')}
-                </span>
-                <span className="badge bg-light text-dark border small">{t('auth.oneClick', 'One-Click')}</span>
-              </div>
 
-              <div className="d-grid gap-2">
-                {users.map(u => {
-                  let roleBadgeColor = 'secondary';
-                  let redirectHint = t('auth.redirectDashboard', 'Dashboard');
-                  if (u.role === 'DATA_ENCODER') {
-                    roleBadgeColor = 'primary';
-                    redirectHint = t('auth.redirectTraders', 'Redirects to Traders Registry');
-                  } else if (u.role === 'DIRECTOR') {
-                    roleBadgeColor = 'danger';
-                    redirectHint = t('auth.redirectVerification', 'Redirects to Verification Queue');
-                  } else if (u.role === 'AGENCY_LEADER') {
-                    roleBadgeColor = 'warning text-dark';
-                    redirectHint = t('auth.redirectReports', 'Redirects to Analytics & Reports');
-                  } else if (u.role === 'SYSTEM_ADMINISTRATOR') {
-                    roleBadgeColor = 'success';
-                    redirectHint = t('auth.redirectDashboard', 'Redirects to System Dashboard');
-                  }
-
-                  return (
-                    <button
-                      key={u.id}
-                      type="button"
-                      className="btn btn-sm btn-outline-light text-start text-dark border d-flex justify-content-between align-items-center p-2 rounded-3 hover-bg-light"
-                      onClick={() => handleQuickSelect(u.username, u.password || 'password123')}
-                    >
-                      <div className="d-flex align-items-center gap-2 overflow-hidden">
-                        <i className="bi bi-person-badge text-primary"></i>
-                        <div className="text-truncate">
-                          <div className="fw-semibold small lh-1">{u.fullName}</div>
-                          <small className="text-muted" style={{ fontSize: '0.7rem' }}>
-                            {redirectHint}
-                          </small>
-                        </div>
-                      </div>
-                      <span className={`badge bg-${roleBadgeColor} small`} style={{ fontSize: '0.65rem' }}>
-                        {t(`role.${u.role}`, u.role.replace(/_/g, ' '))}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
           </div>
 
           <div className="card-footer bg-light text-center py-3 border-top small text-muted">

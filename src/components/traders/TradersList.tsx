@@ -4,6 +4,7 @@ import { useTranslation } from '../../i18n/context';
 import { TraderType, TraderStatus, Trader } from '../../types';
 import { traderService } from '../../services/trader.service';
 import { reportsService } from '../../services/reports.service';
+import { verificationService } from '../../services/verification.service';
 
 interface TradersListProps {
   initialTypeFilter?: TraderType | 'ALL';
@@ -31,7 +32,7 @@ export const TradersList: React.FC<TradersListProps> = ({
   onOpenRegisterType,
   onPrintCertificate,
 }) => {
-  const { traders, woredas, kebeles, users, getWoredaName, getKebeleName, currentUser, verifyTrader, showAlert } = useApp();
+  const { traders, woredas, kebeles, users, getWoredaName, getKebeleName, currentUser, verifyTrader, showAlert, cacheTraders } = useApp();
   const { t } = useTranslation();
 
   // Search & Filter State
@@ -54,6 +55,7 @@ export const TradersList: React.FC<TradersListProps> = ({
   const [displayedTraders, setDisplayedTraders] = useState<Trader[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [isBulkApproving, setIsBulkApproving] = useState<boolean>(false);
 
   // Selection State
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -108,8 +110,9 @@ export const TradersList: React.FC<TradersListProps> = ({
     if (kebeleFilter !== 'ALL') f.kebele = kebeleFilter;
     if (sectorFilter !== 'ALL') f.sector = sectorFilter;
     if (reviewerFilter !== 'ALL') f.reviewer = reviewerFilter;
+    if (initialStatusFilter === 'PENDING' && statusFilter === 'PENDING' && currentUser.role === 'DIRECTOR' && queueTab !== 'ALL') f.assignment = queueTab;
     return f;
-  }, [debouncedSearch, typeFilter, statusFilter, regionFilter, woredaFilter, kebeleFilter, sectorFilter, reviewerFilter]);
+  }, [debouncedSearch, typeFilter, statusFilter, regionFilter, woredaFilter, kebeleFilter, sectorFilter, reviewerFilter, initialStatusFilter, currentUser.role, queueTab]);
 
   // Fetch paginated traders from Django REST API with client-side fallback
   const fetchTraders = useCallback(async () => {
@@ -122,6 +125,7 @@ export const TradersList: React.FC<TradersListProps> = ({
       };
       const response = await traderService.getPaginatedTraders(params);
       setDisplayedTraders(response.results);
+      cacheTraders(response.results);
       setTotalCount(response.count);
     } catch (err) {
       console.warn('Backend pagination request failed, applying client-side filter fallback:', err);
@@ -174,11 +178,15 @@ export const TradersList: React.FC<TradersListProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [page, pageSize, activeFilters, traders, debouncedSearch, typeFilter, statusFilter, woredaFilter, kebeleFilter, sectorFilter]);
+  }, [page, pageSize, activeFilters, traders, debouncedSearch, typeFilter, statusFilter, woredaFilter, kebeleFilter, sectorFilter, cacheTraders]);
 
   useEffect(() => {
     fetchTraders();
   }, [fetchTraders]);
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [activeFilters]);
 
   // Checkbox state for header
   const isAllCurrentPageSelected = useMemo(() => {
@@ -222,6 +230,34 @@ export const TradersList: React.FC<TradersListProps> = ({
       }
       return next;
     });
+  };
+
+  const handleBulkApprove = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) {
+      showAlert('warning', t('verification.selectRecords', 'Select at least one pending record.'));
+      return;
+    }
+    if (ids.length > 100) {
+      showAlert('warning', t('verification.maxBulk', 'Approve no more than 100 records at once.'));
+      return;
+    }
+    if (!window.confirm(t('verification.confirmBulkApprove', `Approve ${ids.length} selected records?`))) {
+      return;
+    }
+
+    setIsBulkApproving(true);
+    try {
+      const result = await verificationService.bulkApproveTraders(ids);
+      cacheTraders(result.traders);
+      setSelectedIds(new Set());
+      showAlert('success', t('verification.bulkApproved', `Successfully approved ${result.approved_count} records.`));
+      await fetchTraders();
+    } catch (err: any) {
+      showAlert('danger', err?.message || t('verification.bulkFailed', 'Bulk approval failed. No records were changed.'));
+    } finally {
+      setIsBulkApproving(false);
+    }
   };
 
   // Export Selected Handlers
@@ -314,6 +350,7 @@ export const TradersList: React.FC<TradersListProps> = ({
     setKebeleFilter('ALL');
     setSectorFilter('ALL');
     setReviewerFilter('ALL');
+    setQueueTab('ALL');
     setPage(1);
   };
 
@@ -352,6 +389,19 @@ export const TradersList: React.FC<TradersListProps> = ({
           </p>
         </div>
         <div className="d-flex gap-2 align-items-center">
+          {currentUser.role === 'DIRECTOR' && statusFilter === 'PENDING' && (
+            <button
+              className="btn btn-success d-flex align-items-center gap-2"
+              onClick={handleBulkApprove}
+              disabled={selectedIds.size === 0 || selectedIds.size > 100 || isBulkApproving}
+              title={t('verification.bulkApproveTitle', 'Approve selected pending records')}
+            >
+              {isBulkApproving
+                ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                : <i className="bi bi-check2-all"></i>}
+              {t('verification.approveSelected', 'Approve selected')} ({selectedIds.size})
+            </button>
+          )}
           {/* Export Dropdown Menu */}
           <div className="btn-group position-relative" ref={exportRef}>
             <button
@@ -447,12 +497,28 @@ export const TradersList: React.FC<TradersListProps> = ({
             </ul>
           </div>
 
+          {currentUser.role === 'DATA_ENCODER' && (
           <button className="btn btn-primary d-flex align-items-center gap-1 shadow-sm" onClick={onOpenRegisterType}>
             <i className="bi bi-person-plus-fill"></i>
             <span>{t('nav.registerTrader', 'Register Trader')}</span>
           </button>
+          )}
         </div>
       </div>
+
+      {initialStatusFilter === 'PENDING' && statusFilter === 'PENDING' && currentUser.role === 'DIRECTOR' && (
+        <div className="d-flex flex-wrap gap-2 mb-3" role="group" aria-label={t('verification.queueTabs', 'Verification queue views')}>
+          <button className={queueTab === 'MINE' ? 'btn btn-primary' : 'btn btn-outline-primary'} onClick={() => { setQueueTab('MINE'); setPage(1); }}>
+            {t('verification.myAssigned', 'My Assigned')}
+          </button>
+          <button className={queueTab === 'UNASSIGNED' ? 'btn btn-primary' : 'btn btn-outline-primary'} onClick={() => { setQueueTab('UNASSIGNED'); setPage(1); }}>
+            {t('verification.unassigned', 'Unassigned')}
+          </button>
+          <button className={queueTab === 'ALL' ? 'btn btn-primary' : 'btn btn-outline-primary'} onClick={() => { setQueueTab('ALL'); setPage(1); }}>
+            {t('verification.masterQueue', 'Master Queue')}
+          </button>
+        </div>
+      )}
 
       {/* Multi-Field Filter Card */}
       <div className="card border-0 shadow-sm mb-3">

@@ -54,7 +54,7 @@ export const TraderDetail: React.FC<TraderDetailProps> = ({
   };
 
   const handleDelete = () => {
-    if (window.confirm(`${t('confirm.deleteTrader', 'Are you sure you want to delete trader')} ${trader.traderId}?`)) {
+    if (window.confirm(`${t('confirm.archiveTrader', 'Are you sure you want to archive trader')} ${trader.traderId}?`)) {
       deleteTrader(trader.traderId);
       onBack();
     }
@@ -81,8 +81,8 @@ export const TraderDetail: React.FC<TraderDetailProps> = ({
             <span>{t('detail.printDossier', 'Print Official Dossier')}</span>
           </button>
 
-          {currentUser.role === 'SYSTEM_ADMINISTRATOR' && (
-            <button className="btn btn-outline-danger" onClick={handleDelete} title={t('detail.deleteRecord', 'Delete record')}>
+          {currentUser.role === 'DATA_ENCODER' && trader.registeredById === currentUser.id && ['DRAFT', 'NEEDS_CORRECTION', 'RETURNED'].includes(trader.status) && (
+            <button className="btn btn-outline-danger" onClick={handleDelete} title={t('detail.archiveRecord', 'Archive draft record')}>
               <i className="bi bi-trash"></i>
             </button>
           )}
