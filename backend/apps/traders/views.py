@@ -13,20 +13,12 @@ from apps.locations.models import Woreda, Kebele
 from apps.audit.models import AuditLog
 from apps.core.permissions import IsDataEncoder, IsAdministrator
 
-from rest_framework.pagination import PageNumberPagination
-
-class StandardResultsSetPagination(PageNumberPagination):
-    page_size = 25
-    page_size_query_param = 'page_size'
-    max_page_size = 100
-
 class TraderViewSet(viewsets.ModelViewSet):
     queryset = Trader.objects.select_related(
         'woreda', 'kebele', 'created_by', 'verified_by', 'legal_details', 'informal_details'
     ).all()
     serializer_class = TraderSerializer
     lookup_field = 'trader_id'
-    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'trader_type', 'woreda', 'kebele']
     search_fields = [
@@ -41,22 +33,10 @@ class TraderViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'status', 'trader_id']
 
     def get_queryset(self):
-        user = self.request.user
-        if not user or not user.is_authenticated:
-            return Trader.objects.none()
-
         qs = Trader.objects.select_related(
             'woreda', 'woreda__region', 'kebele', 'created_by', 'verified_by', 'assigned_director',
             'legal_details', 'informal_details'
-        ).all().order_by('-created_at')
-
-        # Confidentiality rule: Private drafts created by others are excluded
-        from django.db.models import Q
-        qs = qs.filter(Q(created_by=user) | ~Q(status='DRAFT'))
-
-        # Territorial scoping for Data Encoders
-        if user.role == 'DATA_ENCODER' and getattr(user, 'assigned_woreda_id', None):
-            qs = qs.filter(woreda_id=user.assigned_woreda_id)
+        ).all()
 
         params = self.request.query_params
 
@@ -67,34 +47,6 @@ class TraderViewSet(viewsets.ModelViewSet):
             if id_list:
                 qs = qs.filter(trader_id__in=id_list)
 
-        # Free-text search handling
-        search_term = (params.get('search') or params.get('q') or '').strip()
-        if search_term:
-            qs = qs.filter(
-                Q(trader_id__icontains=search_term) |
-                Q(name__icontains=search_term) |
-                Q(owner_full_name__icontains=search_term) |
-                Q(phone_number__icontains=search_term) |
-                Q(legal_details__tin__icontains=search_term) |
-                Q(legal_details__trade_registration_number__icontains=search_term) |
-                Q(informal_details__national_id_resident_id__icontains=search_term)
-            )
-
-        # Trader Type
-        trader_type = params.get('trader_type') or params.get('type')
-        if trader_type and trader_type != 'ALL':
-            qs = qs.filter(trader_type=trader_type)
-
-        # Status
-        status_val = params.get('status')
-        if status_val and status_val != 'ALL':
-            if status_val == 'PENDING':
-                qs = qs.filter(status__in=['PENDING', 'SUBMITTED', 'UNDER_REVIEW'])
-            elif status_val == 'RETURNED':
-                qs = qs.filter(status__in=['RETURNED', 'NEEDS_CORRECTION'])
-            else:
-                qs = qs.filter(status=status_val)
-
         # Region
         region = params.get('region')
         if region and region != 'ALL':
@@ -102,22 +54,6 @@ class TraderViewSet(viewsets.ModelViewSet):
                 qs = qs.filter(woreda__region_id=int(region))
             else:
                 qs = qs.filter(woreda__region__name__icontains=region)
-
-        # Woreda
-        woreda = params.get('woreda')
-        if woreda and woreda != 'ALL':
-            if str(woreda).isdigit():
-                qs = qs.filter(woreda_id=int(woreda))
-            else:
-                qs = qs.filter(woreda__name__icontains=woreda)
-
-        # Kebele
-        kebele = params.get('kebele')
-        if kebele and kebele != 'ALL':
-            if str(kebele).isdigit():
-                qs = qs.filter(kebele_id=int(kebele))
-            else:
-                qs = qs.filter(kebele__name__icontains=kebele)
 
         # Business Sector
         sector = params.get('sector') or params.get('business_sector')
@@ -127,6 +63,7 @@ class TraderViewSet(viewsets.ModelViewSet):
         # Reviewer / Assigned Director
         reviewer = params.get('reviewer')
         if reviewer and reviewer != 'ALL':
+            from django.db.models import Q
             qs = qs.filter(
                 Q(verified_by__username__icontains=reviewer) |
                 Q(verified_by__full_name__icontains=reviewer) |
