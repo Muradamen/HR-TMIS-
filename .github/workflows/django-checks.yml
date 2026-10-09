@@ -5,11 +5,17 @@ on:
     branches: [main]
     paths:
       - 'backend/**'
+      - 'src/**'
+      - 'package.json'
+      - 'vite.config.ts'
       - '.github/workflows/django-checks.yml'
   push:
     branches: ['recovery/**']
     paths:
       - 'backend/**'
+      - 'src/**'
+      - 'package.json'
+      - 'vite.config.ts'
       - '.github/workflows/django-checks.yml'
 
 permissions:
@@ -42,3 +48,17 @@ jobs:
         run: python manage.py makemigrations --check --dry-run
       - name: Run automated tests
         run: python manage.py test
+
+  frontend-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install frontend dependencies
+        run: npm install
+      - name: TypeScript checks
+        run: npm run lint
+      - name: Production frontend build
+        run: npm run build
