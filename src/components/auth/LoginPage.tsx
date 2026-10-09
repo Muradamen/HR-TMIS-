@@ -240,9 +240,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   <label className="form-label fw-semibold text-dark small text-uppercase mb-0">
                     {t('auth.passwordLabel', 'System Password')}
                   </label>
-                  <small className="text-muted" style={{ fontSize: '0.75rem' }}>
-                    {t('auth.defaultHint', 'Default: password123')}
-                  </small>
                 </div>
                 <div className="input-group">
                   <span className="input-group-text bg-light text-muted border-end-0">
