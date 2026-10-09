@@ -31,8 +31,9 @@ export const App: React.FC = () => {
       case 'AGENCY_LEADER':
         return 'reports';
       case 'SYSTEM_ADMINISTRATOR':
+        return 'locations';
       default:
-        return 'dashboard';
+        return 'traders-all';
     }
   };
 
