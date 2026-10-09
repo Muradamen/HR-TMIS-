@@ -478,6 +478,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         )}
 
         {/* Quick Register Button */}
+        {currentUser.role === 'DATA_ENCODER' && (
         <button
           className="btn btn-sm btn-primary d-flex align-items-center gap-1 shadow-sm py-1 px-2"
           onClick={onOpenRegisterType}
@@ -485,6 +486,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <i className="bi bi-person-plus-fill"></i>
           <span className="d-none d-md-inline small">{t('nav.registerTrader', 'Register Trader')}</span>
         </button>
+        )}
 
         {/* Role & User Switcher */}
         <div className="dropdown position-relative" ref={userDropdownRef}>
