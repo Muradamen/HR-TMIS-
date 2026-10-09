@@ -249,7 +249,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Authoritative backend persistence to PostgreSQL
     traderService.createInformalTrader(details)
       .then(serverTrader => {
-        setTraders(prev => prev.map(t => t.traderId === anticipatedTraderId ? serverTrader : t));
+        setTraders(prev => [serverTrader, ...prev.filter(t => t.traderId !== anticipatedTraderId && t.traderId !== serverTrader.traderId)]);
         showAlert('success', `Informal Trader ${serverTrader.traderId} (${details.fullName}) assessed and saved in PostgreSQL.`);
       })
       .catch((err: ApiError) => {
