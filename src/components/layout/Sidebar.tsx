@@ -168,9 +168,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <i className="bi bi-file-earmark-person"></i>
               <span>{t('sidebar.informalAssessment', 'Informal Assessment')}</span>
             </button>
-          )}
-
           </li>
+          )}
 
           <li className="nav-header">{t('sidebar.adminReports', 'Administration & Reports')}</li>
 
