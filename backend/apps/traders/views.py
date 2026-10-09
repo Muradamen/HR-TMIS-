@@ -97,6 +97,15 @@ class TraderViewSet(viewsets.ModelViewSet):
 
         return qs
 
+    def perform_update(self, serializer):
+        trader = serializer.instance
+        if trader.status not in ('DRAFT', 'NEEDS_CORRECTION', 'RETURNED'):
+            from rest_framework.exceptions import APIException
+            conflict = APIException('Only draft or returned records may be edited.')
+            conflict.status_code = status.HTTP_409_CONFLICT
+            raise conflict
+        serializer.save()
+
     def generate_trader_id(self):
         last_trader = Trader.objects.order_by('-id').first()
         next_num = (last_trader.id + 1) if last_trader else 1
