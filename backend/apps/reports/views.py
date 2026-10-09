@@ -293,7 +293,7 @@ def get_filtered_traders_queryset(request):
 
 
 class DashboardStatsView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReportExporter]
 
     def get(self, request):
         total_traders = Trader.objects.count()
@@ -417,7 +417,6 @@ class ExportCsvView(APIView):
         return self._export(request)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class ExportExcelView(APIView):
     """
     Exports Trader records to formatted Microsoft Excel (.xlsx) workbook using openpyxl.
@@ -425,8 +424,7 @@ class ExportExcelView(APIView):
     styled header row (dark navy #1E3A8A, bold white text), data borders,
     and protection against spreadsheet formula injection.
     """
-    authentication_classes = [CsrfExemptSessionAuthentication, BasicAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReportExporter]
 
     def _export(self, request):
         data = request.data if request.method == 'POST' and isinstance(request.data, dict) else {}
@@ -550,7 +548,6 @@ class ExportExcelView(APIView):
         return self._export(request)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class ExportPdfView(APIView):
     """
     Exports Trader records to a structured PDF report using ReportLab.
@@ -558,8 +555,7 @@ class ExportPdfView(APIView):
     record count, professionally formatted table with Ethiopic and Latin character support,
     and running page numbers ("Page X of Y") via NumberedCanvas.
     """
-    authentication_classes = [CsrfExemptSessionAuthentication, BasicAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReportExporter]
 
     def _export(self, request):
         data = request.data if request.method == 'POST' and isinstance(request.data, dict) else {}
@@ -800,7 +796,7 @@ class ExportPdfView(APIView):
 
 
 class CertificatePdfView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReportExporter]
 
     def get(self, request, trader_id):
         try:
