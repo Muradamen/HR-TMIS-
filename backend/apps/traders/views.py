@@ -11,7 +11,7 @@ from .models import Trader, LegalTrader, InformalTrader
 from .serializers import TraderSerializer
 from apps.locations.models import Woreda, Kebele
 from apps.audit.models import AuditLog
-from apps.core.permissions import IsDataEncoder, IsAdministrator, IsDirector, IsAgencyLeader
+from apps.core.permissions import IsDataEncoder, IsAdministrator, IsDirector, IsAgencyLeader, IsTraderReadAllowed
 
 class TraderViewSet(viewsets.ModelViewSet):
     queryset = Trader.objects.select_related(
@@ -38,7 +38,7 @@ class TraderViewSet(viewsets.ModelViewSet):
                            'update_informal', 'submit_record'):
             classes = [IsDataEncoder]
         else:
-            classes = [permissions.IsAuthenticated]
+            classes = [IsTraderReadAllowed]
         return [cls() for cls in classes]
 
     def get_queryset(self):
