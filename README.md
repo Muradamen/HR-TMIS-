@@ -1,4 +1,4 @@
-# HT-TMIS (Harari Region Trader Management Information System)
+# HT-TMIS — Harari Trade & Trader Management Information System
 
 A web-based Trader Management Information System for the **Harari People National Regional State Trade & Industry Development Agency**.
 
