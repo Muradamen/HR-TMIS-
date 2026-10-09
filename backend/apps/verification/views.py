@@ -33,6 +33,9 @@ class VerificationClaimView(APIView):
             except Trader.DoesNotExist:
                 return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+            if request.user.assigned_woreda_id and trader.woreda_id != request.user.assigned_woreda_id:
+                return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
+
             if trader.status not in ('SUBMITTED', 'UNDER_REVIEW'):
                 return Response({'detail': 'Only submitted records can be claimed.'}, status=status.HTTP_409_CONFLICT)
 
@@ -91,6 +94,9 @@ class VerificationDecisionView(APIView):
                 return Response({'detail': 'Only submitted or under-review records can receive a decision.'}, status=status.HTTP_409_CONFLICT)
             if trader.assigned_director_id and trader.assigned_director_id != request.user.id:
                 return Response({'detail': 'This record is assigned to another director.'}, status=status.HTTP_403_FORBIDDEN)
+
+            if request.user.assigned_woreda_id and trader.woreda_id != request.user.assigned_woreda_id:
+                return Response({'detail': 'Trader not found.'}, status=status.HTTP_404_NOT_FOUND)
 
             # Self-approval guard: Submitting officer cannot approve their own record
             if trader.created_by == request.user:
