@@ -70,6 +70,28 @@ class HTTMISIntegrationTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(res.data.get('code'), 'INVALID_WOREDA_KEBELE_COMBINATION')
 
+    def test_encoder_cannot_register_outside_assigned_woreda(self):
+        self.encoder.assigned_woreda = self.woreda_an
+        self.encoder.save(update_fields=['assigned_woreda'])
+        self.client.force_authenticate(user=self.encoder)
+        response = self.client.post('/api/v1/traders/legal/', {
+            'tradeName': 'Out-of-Territory Shop',
+            'ownerFullName': 'Test Owner',
+            'phoneNumber': '+251911000111',
+            'tin': '5544332211',
+            'tradeRegistrationNumber': 'HR-TR-OUTSIDE-001',
+            'woredaId': self.woreda_ab.id,
+            'kebeleId': self.kebele_ab4.id,
+            'gender': 'MALE',
+            'age': 30,
+            'businessSector': 'GENERAL_TRADE',
+            'tradeScale': 'RETAIL',
+            'businessOwnershipType': 'SOLE_PROPRIETORSHIP',
+            'issuingInstitution': 'Harari Trade Bureau',
+            'dateOfIssuance': '2025-01-01',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_legal_trader_registration_and_duplicate_tin_rejection(self):
         """Register legal trader, then verify duplicate TIN is rejected."""
         self.client.force_authenticate(user=self.encoder)
