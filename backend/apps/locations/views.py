@@ -6,7 +6,7 @@ from apps.core.permissions import IsAdministrator
 class RegionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Region.objects.filter(is_active=True).order_by('name')
     serializer_class = RegionSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
 class WoredaViewSet(viewsets.ModelViewSet):
     queryset = Woreda.objects.filter(is_active=True).order_by('name')
@@ -15,7 +15,7 @@ class WoredaViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsAdministrator()]
-        return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
 
 class KebeleViewSet(viewsets.ModelViewSet):
     queryset = Kebele.objects.filter(is_active=True).order_by('name')
