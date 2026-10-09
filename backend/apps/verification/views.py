@@ -46,8 +46,10 @@ class VerificationClaimView(APIView):
                 )
 
             trader.assigned_director = request.user
+            trader.assigned_by = request.user
+            trader.assigned_at = timezone.now()
             trader.status = 'UNDER_REVIEW'
-            trader.save()
+            trader.save(update_fields=['assigned_director', 'assigned_by', 'assigned_at', 'status', 'updated_at'])
 
             VerificationLog.objects.create(
                 trader=trader,
