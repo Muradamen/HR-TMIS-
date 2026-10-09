@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import UserSerializer, LoginSerializer
 from .models import LoginAttempt
-from apps.core.permissions import IsAdministrator
+from apps.core.permissions import IsAdministrator, IsFormalizationReader
 from apps.audit.models import AuditLog
 
 User = get_user_model()
@@ -113,6 +113,26 @@ class MeView(APIView):
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+
+class ReviewerListView(APIView):
+    permission_classes = [IsFormalizationReader]
+
+    def get(self, request):
+        reviewers = User.objects.filter(
+            is_active=True, role='DIRECTOR'
+        ).order_by('full_name', 'username')
+        return Response([
+            {
+                'id': user.id,
+                'username': user.username,
+                'fullName': user.full_name,
+                'email': '',
+                'role': user.role,
+                'department': user.department,
+            }
+            for user in reviewers
+        ])
 
 
 class UserViewSet(viewsets.ModelViewSet):
