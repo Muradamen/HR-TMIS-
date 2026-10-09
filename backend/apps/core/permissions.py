@@ -29,7 +29,6 @@ class IsAdministrator(permissions.BasePermission):
         return bool(
             request.user and request.user.is_authenticated and (
                 request.user.role == 'SYSTEM_ADMINISTRATOR' or
-                request.user.is_staff or
                 request.user.groups.filter(name='ADMINISTRATOR').exists()
             )
         )
