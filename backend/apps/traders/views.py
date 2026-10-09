@@ -390,7 +390,7 @@ class TraderViewSet(viewsets.ModelViewSet):
         trader.save()
 
         AuditLog.objects.create(
-            action='UPDATE_TRADER',
+            action='SUBMIT_TRADER',
             trader_id=trader.trader_id,
             details=f"Submitted record for verification",
             user=request.user.username if request.user.is_authenticated else 'system',
