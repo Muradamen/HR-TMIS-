@@ -1,4 +1,6 @@
 from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.views.decorators.csrf import csrf_protect
+from django.utils.decorators import method_decorator
 from django.core.cache import cache
 from rest_framework import status, viewsets, permissions
 from rest_framework.views import APIView
@@ -11,6 +13,7 @@ LOGIN_FAILURE_LIMIT = 8
 LOGIN_LOCK_SECONDS = 15 * 60
 
 
+@method_decorator(csrf_protect, name='dispatch')
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
@@ -18,7 +21,7 @@ class LoginView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        identifier = serializer.validated_data['username'].strip()
+        identifier = serializer.validated_data['identifier']
         email = identifier.lower()
         password = serializer.validated_data['password']
         key = 'login-fail:' + str(request.META.get('REMOTE_ADDR', 'unknown')) + ':' + email
