@@ -58,3 +58,6 @@ class RolePermissionTests(TestCase):
     def test_administrator_does_not_inherit_verification_permission(self):
         self.assertTrue(self.allowed(IsAdministrator, self.admin))
         self.assertFalse(self.allowed(CanApproveTrader, self.admin))
+        self.director.is_staff = True
+        self.director.save(update_fields=['is_staff'])
+        self.assertFalse(self.allowed(IsAdministrator, self.director))
