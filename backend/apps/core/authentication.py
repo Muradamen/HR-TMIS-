@@ -1,6 +1,6 @@
 from rest_framework.authentication import SessionAuthentication
 
-class CsrfExemptSessionAuthentication(SessionAuthentication):
-    """Deprecated compatibility alias. Session-authenticated unsafe requests MUST pass CSRF."""
+class StrictSessionAuthentication(SessionAuthentication):
+    """Session-authenticated unsafe requests always pass Django CSRF validation."""
     def enforce_csrf(self, request):
         return super().enforce_csrf(request)
