@@ -32,6 +32,15 @@ class TraderViewSet(viewsets.ModelViewSet):
     ]
     ordering_fields = ['created_at', 'status', 'trader_id']
 
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy',
+                           'register_legal', 'register_informal', 'update_legal',
+                           'update_informal', 'submit_record'):
+            classes = [IsDataEncoder]
+        else:
+            classes = [permissions.IsAuthenticated]
+        return [cls() for cls in classes]
+
     def get_queryset(self):
         qs = Trader.objects.select_related(
             'woreda', 'woreda__region', 'kebele', 'created_by', 'verified_by', 'assigned_director',
