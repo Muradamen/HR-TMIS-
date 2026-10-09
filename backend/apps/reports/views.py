@@ -4,18 +4,15 @@ from decimal import Decimal
 from django.http import HttpResponse
 from django.db.models import Count, Sum, Avg, Q
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 from rest_framework import permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.authentication import BasicAuthentication
-from apps.core.authentication import CsrfExemptSessionAuthentication
 
 from apps.traders.models import Trader, LegalTrader, InformalTrader
 from apps.formalization.models import FormalizationAssessment
 from apps.locations.models import Woreda, Kebele, Region
 from apps.audit.models import AuditLog
+from apps.core.permissions import IsReportExporter
 
 # Import openpyxl for Excel export
 import openpyxl
@@ -296,7 +293,7 @@ def get_filtered_traders_queryset(request):
 
 
 class DashboardStatsView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReportExporter]
 
     def get(self, request):
         total_traders = Trader.objects.count()
@@ -371,15 +368,13 @@ class DashboardStatsView(APIView):
         })
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class ExportCsvView(APIView):
     """
     Exports Trader records to CSV.
     Supports both GET (with query parameters) and POST (with JSON payload).
     Enforces formula injection protection and prepends UTF-8 BOM.
     """
-    authentication_classes = [CsrfExemptSessionAuthentication, BasicAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReportExporter]
 
     def _export(self, request):
         data = request.data if request.method == 'POST' and isinstance(request.data, dict) else {}
@@ -422,7 +417,6 @@ class ExportCsvView(APIView):
         return self._export(request)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class ExportExcelView(APIView):
     """
     Exports Trader records to formatted Microsoft Excel (.xlsx) workbook using openpyxl.
@@ -430,8 +424,7 @@ class ExportExcelView(APIView):
     styled header row (dark navy #1E3A8A, bold white text), data borders,
     and protection against spreadsheet formula injection.
     """
-    authentication_classes = [CsrfExemptSessionAuthentication, BasicAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReportExporter]
 
     def _export(self, request):
         data = request.data if request.method == 'POST' and isinstance(request.data, dict) else {}
@@ -555,7 +548,6 @@ class ExportExcelView(APIView):
         return self._export(request)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class ExportPdfView(APIView):
     """
     Exports Trader records to a structured PDF report using ReportLab.
@@ -563,8 +555,7 @@ class ExportPdfView(APIView):
     record count, professionally formatted table with Ethiopic and Latin character support,
     and running page numbers ("Page X of Y") via NumberedCanvas.
     """
-    authentication_classes = [CsrfExemptSessionAuthentication, BasicAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReportExporter]
 
     def _export(self, request):
         data = request.data if request.method == 'POST' and isinstance(request.data, dict) else {}
@@ -805,7 +796,7 @@ class ExportPdfView(APIView):
 
 
 class CertificatePdfView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReportExporter]
 
     def get(self, request, trader_id):
         try:
