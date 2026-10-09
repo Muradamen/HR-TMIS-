@@ -31,7 +31,7 @@ export const TradersList: React.FC<TradersListProps> = ({
   onOpenRegisterType,
   onPrintCertificate,
 }) => {
-  const { traders, woredas, kebeles, users, getWoredaName, getKebeleName, currentUser, verifyTrader, showAlert } = useApp();
+  const { traders, woredas, kebeles, users, getWoredaName, getKebeleName, currentUser, verifyTrader, showAlert, cacheTraders } = useApp();
   const { t } = useTranslation();
 
   // Search & Filter State
@@ -122,6 +122,7 @@ export const TradersList: React.FC<TradersListProps> = ({
       };
       const response = await traderService.getPaginatedTraders(params);
       setDisplayedTraders(response.results);
+      cacheTraders(response.results);
       setTotalCount(response.count);
     } catch (err) {
       console.warn('Backend pagination request failed, applying client-side filter fallback:', err);
