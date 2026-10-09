@@ -251,11 +251,6 @@ class TraderViewSet(viewsets.ModelViewSet):
         if 'phoneNumber' in data:
             trader.phone_number = data['phoneNumber']
 
-        # If resubmitting after correction
-        if trader.status in ['NEEDS_CORRECTION', 'RETURNED']:
-            trader.status = 'SUBMITTED'
-            trader.submitted_at = timezone.now()
-
         trader.save()
 
         legal = trader.legal_details
@@ -311,10 +306,6 @@ class TraderViewSet(viewsets.ModelViewSet):
         if 'phoneNumber' in data:
             trader.phone_number = data['phoneNumber']
 
-        if trader.status in ['NEEDS_CORRECTION', 'RETURNED']:
-            trader.status = 'SUBMITTED'
-            trader.submitted_at = timezone.now()
-
         trader.save()
 
         informal = trader.informal_details
@@ -360,7 +351,7 @@ class TraderViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='submit')
     def submit_record(self, request, trader_id=None):
         trader = self.get_object()
-        if trader.status not in ['DRAFT', 'NEEDS_CORRECTION']:
+        if trader.status not in ['DRAFT', 'NEEDS_CORRECTION', 'RETURNED']:
             return Response({'detail': f'Cannot submit record in status {trader.status}'}, status=status.HTTP_400_BAD_REQUEST)
 
         trader.status = 'SUBMITTED'
