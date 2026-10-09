@@ -56,6 +56,11 @@ class TraderViewSet(viewsets.ModelViewSet):
             if id_list:
                 qs = qs.filter(trader_id__in=id_list)
 
+        # Frontend uses `type`; expose it as the canonical trader_type filter.
+        trader_type = params.get('type') or params.get('trader_type')
+        if trader_type and trader_type != 'ALL':
+            qs = qs.filter(trader_type=trader_type)
+
         # Region
         region = params.get('region')
         if region and region != 'ALL':
@@ -227,7 +232,7 @@ class TraderViewSet(viewsets.ModelViewSet):
 
         return Response(TraderSerializer(trader).data, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['put', 'patch'], url_path='update-legal')
+    @action(detail=True, methods=['post', 'put', 'patch'], url_path='update-legal')
     def update_legal(self, request, trader_id=None):
         trader = self.get_object()
         if trader.trader_type != 'LEGAL':
@@ -285,7 +290,7 @@ class TraderViewSet(viewsets.ModelViewSet):
 
         return Response(TraderSerializer(trader).data)
 
-    @action(detail=True, methods=['put', 'patch'], url_path='update-informal')
+    @action(detail=True, methods=['post', 'put', 'patch'], url_path='update-informal')
     def update_informal(self, request, trader_id=None):
         trader = self.get_object()
         if trader.trader_type != 'INFORMAL':
