@@ -1,9 +1,26 @@
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
 <title><%= typeof title !== 'undefined' ? title + ' | HR-TMIS' : 'HR-TMIS - Harari Region Trader Management Information System' %></title>
 <meta name="description" content="Harari Region Trader Management Information System (HR-TMIS) for managing legal and informal traders." />
 <meta property="og:title" content="HR-TMIS - Harari Region Trader Management Information System" />
 <meta property="og:description" content="Harari Region Trader Management Information System (HR-TMIS) for managing legal and informal traders." />
+
+<!-- AdminLTE 4 & Bootstrap 5 Immediate Theme Initializer (prevents theme flicker) -->
+<script>
+  (function () {
+    try {
+      const storedTheme = localStorage.getItem('adminlte_theme') || 'light';
+      let activeTheme = storedTheme;
+      if (storedTheme === 'auto') {
+        activeTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-bs-theme', activeTheme);
+      document.documentElement.setAttribute('data-theme-setting', storedTheme);
+    } catch (_) {
+      document.documentElement.setAttribute('data-bs-theme', 'light');
+    }
+  })();
+</script>
 
 <!-- Fonts & Icons -->
 <link rel="stylesheet" href="/static/adminlte/plugins/bootstrap-icons/font/bootstrap-icons.min.css" />
@@ -17,45 +34,183 @@
 <style>
   :root {
     --brand-harari-green: #1b5e20;
+    --brand-harari-green-light: #2e7d32;
     --brand-harari-gold: #c67d00;
   }
+
+  /* AdminLTE 4 Light & Dark Enhancements */
+  [data-bs-theme="dark"] {
+    --brand-harari-green: #2e7d32;
+    --brand-harari-green-light: #4caf50;
+    --bs-body-bg: #0f172a;
+    --bs-body-color: #e2e8f0;
+    --bs-tertiary-bg: #1e293b;
+    --bs-secondary-bg: #1e293b;
+    --bs-card-bg: #1e293b;
+    --bs-border-color: #334155;
+  }
+
+  [data-bs-theme="dark"] .bg-body-tertiary {
+    background-color: #0f172a !important;
+  }
+
+  [data-bs-theme="dark"] .app-header {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+  }
+
+  [data-bs-theme="dark"] .app-sidebar {
+    background-color: #0b1120 !important;
+    border-right: 1px solid #1e293b !important;
+  }
+
+  [data-bs-theme="dark"] .app-sidebar .sidebar-brand {
+    background-color: #0f172a !important;
+    border-bottom: 1px solid #1e293b !important;
+  }
+
+  [data-bs-theme="dark"] .card {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #e2e8f0;
+  }
+
+  [data-bs-theme="dark"] .card-header,
+  [data-bs-theme="dark"] .card-footer {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+  }
+
+  [data-bs-theme="dark"] .app-content-header {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+  }
+
+  [data-bs-theme="dark"] .app-footer {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+  }
+
+  [data-bs-theme="dark"] .table-light {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+  }
+
+  [data-bs-theme="dark"] .table-light th {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+  }
+
+  [data-bs-theme="dark"] .table {
+    --bs-table-color: #e2e8f0;
+    --bs-table-bg: #1e293b;
+    --bs-table-border-color: #334155;
+    --bs-table-hover-bg: #273549;
+    --bs-table-striped-bg: #162235;
+  }
+
+  [data-bs-theme="dark"] .list-group-item {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+  }
+
+  [data-bs-theme="dark"] .dropdown-menu {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
+  }
+
+  [data-bs-theme="dark"] .dropdown-item {
+    color: #e2e8f0 !important;
+  }
+
+  [data-bs-theme="dark"] .dropdown-item:hover,
+  [data-bs-theme="dark"] .dropdown-item:focus {
+    background-color: #334155 !important;
+  }
+
+  [data-bs-theme="dark"] .form-control,
+  [data-bs-theme="dark"] .form-select {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+  }
+
+  [data-bs-theme="dark"] .form-control:focus,
+  [data-bs-theme="dark"] .form-select:focus {
+    border-color: #22c55e !important;
+    box-shadow: 0 0 0 0.25rem rgba(34, 197, 94, 0.25) !important;
+  }
+
+  [data-bs-theme="dark"] .input-group-text {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+  }
+
+  [data-bs-theme="dark"] .text-dark {
+    color: #f1f5f9 !important;
+  }
+
+  [data-bs-theme="dark"] .form-section-title {
+    color: #4ade80 !important;
+    border-bottom-color: #334155 !important;
+  }
+
+  [data-bs-theme="dark"] body.login-page {
+    background: radial-gradient(circle at 50% 30%, #1e293b 0%, #0b1120 100%) !important;
+  }
+
+  /* Harari Brand Theme Styles */
   .bg-harari {
     background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%) !important;
-    color: #ffffff;
+    color: #ffffff !important;
   }
+
   .app-sidebar .sidebar-brand {
     background-color: #144618;
     color: #ffffff;
     font-weight: 700;
     letter-spacing: 0.5px;
   }
+
   .badge-legal {
     background-color: #0d6efd;
-    color: white;
+    color: #ffffff;
   }
+
   .badge-informal {
     background-color: #fd7e14;
-    color: white;
+    color: #ffffff;
   }
+
   .badge-approved {
     background-color: #198754;
-    color: white;
+    color: #ffffff;
   }
+
   .badge-pending {
     background-color: #ffc107;
     color: #212529;
   }
+
   .badge-returned {
     background-color: #dc3545;
-    color: white;
+    color: #ffffff;
   }
+
   .stat-card {
     transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
+
   .stat-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.12);
   }
+
   .form-section-title {
     font-size: 1rem;
     font-weight: 600;
@@ -65,8 +220,23 @@
     margin-bottom: 1rem;
     margin-top: 0.8rem;
   }
+
+  /* Responsive Utilities */
+  @media (max-width: 575.98px) {
+    .app-main {
+      padding-top: 0.5rem;
+    }
+    .app-content-header h3 {
+      font-size: 1.25rem;
+    }
+    .btn-responsive {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.825rem;
+    }
+  }
+
   @media print {
-    .app-sidebar, .app-header, .no-print, .btn, .breadcrumb {
+    .app-sidebar, .app-header, .no-print, .btn, .breadcrumb, .theme-toggle-dropdown {
       display: none !important;
     }
     .app-wrapper {
@@ -75,6 +245,16 @@
     }
     .app-main {
       padding: 0 !important;
+    }
+    body, [data-bs-theme="dark"] body {
+      background-color: #ffffff !important;
+      color: #000000 !important;
+    }
+    .card {
+      border: 1px solid #ccc !important;
+      box-shadow: none !important;
+      background-color: #ffffff !important;
+      color: #000000 !important;
     }
   }
 </style>

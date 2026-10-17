@@ -1,66 +1,121 @@
-<nav class="app-header navbar navbar-expand bg-body">
-  <div class="container-fluid">
-    <ul class="navbar-nav">
+<nav class="app-header navbar navbar-expand bg-body shadow-sm">
+  <div class="container-fluid px-2 px-sm-3">
+    <!-- Left Navigation Items -->
+    <ul class="navbar-nav align-items-center">
       <li class="nav-item">
-        <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
-          <i class="bi bi-list fs-5"></i>
+        <a class="nav-link px-2" data-lte-toggle="sidebar" href="#" role="button" title="Toggle Sidebar">
+          <i class="bi bi-list fs-4"></i>
         </a>
       </li>
       <li class="nav-item d-none d-md-block">
-        <a href="/dashboard" class="nav-link fw-semibold text-success">
-          <i class="bi bi-building-check me-1"></i> Harari Region Trade & Industry Bureau
+        <a href="/dashboard" class="nav-link fw-semibold text-success d-flex align-items-center">
+          <i class="bi bi-building-check me-2"></i>
+          <span>Harari Region Trade & Industry Bureau</span>
         </a>
       </li>
     </ul>
 
-    <ul class="navbar-nav ms-auto align-items-center gap-2">
+    <!-- Right Navigation Items -->
+    <ul class="navbar-nav ms-auto align-items-center gap-1 gap-sm-2">
       <!-- Role Badge -->
       <li class="nav-item">
         <% if (user.role === 'DATA_ENCODER') { %>
-          <span class="badge bg-primary px-3 py-2 fs-7"><i class="bi bi-input-cursor-text me-1"></i> Data Encoder</span>
+          <span class="badge bg-primary px-2 py-1 px-sm-3 py-sm-2 fs-7" title="Role: Data Encoder">
+            <i class="bi bi-input-cursor-text me-sm-1"></i>
+            <span class="d-none d-sm-inline">Data Encoder</span>
+          </span>
         <% } else if (user.role === 'DIRECTOR_OF_TRADER_CONTROL') { %>
-          <span class="badge bg-success px-3 py-2 fs-7"><i class="bi bi-clipboard-check me-1"></i> Director of Trader Control</span>
+          <span class="badge bg-success px-2 py-1 px-sm-3 py-sm-2 fs-7" title="Role: Director of Trader Control">
+            <i class="bi bi-clipboard-check me-sm-1"></i>
+            <span class="d-none d-sm-inline">Director of Control</span>
+          </span>
         <% } else if (user.role === 'ADMINISTRATOR') { %>
-          <span class="badge bg-dark px-3 py-2 fs-7"><i class="bi bi-shield-lock me-1"></i> Administrator</span>
+          <span class="badge bg-dark px-2 py-1 px-sm-3 py-sm-2 fs-7" title="Role: Administrator">
+            <i class="bi bi-shield-lock me-sm-1"></i>
+            <span class="d-none d-sm-inline">Administrator</span>
+          </span>
         <% } else { %>
-          <span class="badge bg-warning text-dark px-3 py-2 fs-7"><i class="bi bi-award me-1"></i> Agency Leader</span>
+          <span class="badge bg-warning text-dark px-2 py-1 px-sm-3 py-sm-2 fs-7" title="Role: Agency Leader">
+            <i class="bi bi-award me-sm-1"></i>
+            <span class="d-none d-sm-inline">Agency Leader</span>
+          </span>
         <% } %>
       </li>
 
       <!-- Quick Register Action (for Encoders & Admins) -->
       <% if (user.role === 'DATA_ENCODER' || user.role === 'ADMINISTRATOR') { %>
         <li class="nav-item">
-          <a href="/traders/register/" class="btn btn-sm btn-success text-white px-3 shadow-sm">
-            <i class="bi bi-person-plus-fill me-1"></i> Register Trader
+          <a href="/traders/register/" class="btn btn-sm btn-success text-white px-2 px-sm-3 shadow-sm d-flex align-items-center" title="Register New Trader">
+            <i class="bi bi-person-plus-fill me-sm-1"></i>
+            <span class="d-none d-md-inline">Register</span>
           </a>
         </li>
       <% } %>
 
-      <!-- Role Switcher for Testing -->
-      <li class="nav-item dropdown">
-        <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <i class="bi bi-arrow-repeat text-secondary"></i>
-          <span class="d-none d-sm-inline">Switch Role</span>
+      <!-- AdminLTE 4 Color Mode / Theme Toggle Dropdown -->
+      <li class="nav-item dropdown theme-toggle-dropdown">
+        <button
+          class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center px-2 py-1"
+          id="bd-theme"
+          type="button"
+          aria-expanded="false"
+          data-bs-toggle="dropdown"
+          aria-label="Toggle theme (auto)"
+          title="Switch Light / Dark Theme"
+        >
+          <i class="bi bi-circle-half theme-icon-active" id="theme-active-icon"></i>
+          <span class="d-none d-lg-inline ms-1 small" id="bd-theme-text">Theme</span>
         </button>
-        <ul class="dropdown-menu dropdown-menu-end shadow">
-          <li class="dropdown-header">Switch Logged-in Role</li>
+        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bd-theme-text" style="min-width: 140px;">
           <li>
-            <a class="dropdown-item py-1 <%= user.role === 'DATA_ENCODER' ? 'active' : '' %>" href="/api/switch-user?user=encoder">
+            <button type="button" class="dropdown-item d-flex align-items-center py-2" data-bs-theme-value="light" onclick="setAdminlteTheme('light')">
+              <i class="bi bi-sun-fill me-2 text-warning"></i>
+              <span>Light</span>
+              <i class="bi bi-check2 ms-auto text-success check-icon d-none" data-check="light"></i>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="dropdown-item d-flex align-items-center py-2" data-bs-theme-value="dark" onclick="setAdminlteTheme('dark')">
+              <i class="bi bi-moon-stars-fill me-2 text-info"></i>
+              <span>Dark</span>
+              <i class="bi bi-check2 ms-auto text-success check-icon d-none" data-check="dark"></i>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="dropdown-item d-flex align-items-center py-2" data-bs-theme-value="auto" onclick="setAdminlteTheme('auto')">
+              <i class="bi bi-circle-half me-2 text-secondary"></i>
+              <span>Auto (System)</span>
+              <i class="bi bi-check2 ms-auto text-success check-icon d-none" data-check="auto"></i>
+            </button>
+          </li>
+        </ul>
+      </li>
+
+      <!-- Role Switcher for Testing (RBAC Audit) -->
+      <li class="nav-item dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1 px-2 py-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Switch logged-in role">
+          <i class="bi bi-arrow-repeat text-secondary"></i>
+          <span class="d-none d-md-inline small">Switch</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width: 220px;">
+          <li class="dropdown-header small text-uppercase fw-bold text-muted">Select User Role (RBAC)</li>
+          <li>
+            <a class="dropdown-item py-2 <%= user.role === 'DATA_ENCODER' ? 'active' : '' %>" href="/api/switch-user?user=encoder" onclick="switchUserRole('encoder', event)">
               <i class="bi bi-input-cursor-text me-2 text-primary"></i> Data Encoder (Dawit)
             </a>
           </li>
           <li>
-            <a class="dropdown-item py-1 <%= user.role === 'DIRECTOR_OF_TRADER_CONTROL' ? 'active' : '' %>" href="/api/switch-user?user=director">
+            <a class="dropdown-item py-2 <%= user.role === 'DIRECTOR_OF_TRADER_CONTROL' ? 'active' : '' %>" href="/api/switch-user?user=director" onclick="switchUserRole('director', event)">
               <i class="bi bi-clipboard-check me-2 text-success"></i> Director of Control (Tigist)
             </a>
           </li>
           <li>
-            <a class="dropdown-item py-1 <%= user.role === 'ADMINISTRATOR' ? 'active' : '' %>" href="/api/switch-user?user=admin">
+            <a class="dropdown-item py-2 <%= user.role === 'ADMINISTRATOR' ? 'active' : '' %>" href="/api/switch-user?user=admin" onclick="switchUserRole('admin', event)">
               <i class="bi bi-gear-fill me-2 text-dark"></i> Administrator (Murad)
             </a>
           </li>
           <li>
-            <a class="dropdown-item py-1 <%= user.role === 'AGENCY_LEADER' ? 'active' : '' %>" href="/api/switch-user?user=leader">
+            <a class="dropdown-item py-2 <%= user.role === 'AGENCY_LEADER' ? 'active' : '' %>" href="/api/switch-user?user=leader" onclick="switchUserRole('leader', event)">
               <i class="bi bi-award-fill me-2 text-warning"></i> Agency Leader (Yusuf)
             </a>
           </li>
@@ -68,14 +123,88 @@
       </li>
 
       <!-- User Profile & Logout -->
-      <li class="nav-item d-flex align-items-center ms-2 border-start ps-3 gap-2">
-        <span class="small fw-semibold text-secondary d-none d-md-inline">
+      <li class="nav-item d-flex align-items-center ms-1 ms-sm-2 border-start ps-2 ps-sm-3 gap-2">
+        <span class="small fw-semibold text-secondary d-none d-lg-inline text-truncate" style="max-width: 140px;">
           <%= user.first_name %> <%= user.last_name %>
         </span>
-        <a href="/logout" class="btn btn-sm btn-outline-danger py-1 px-2" title="Sign Out">
-          <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Logout</span>
+        <a href="/logout" class="btn btn-sm btn-outline-danger py-1 px-2 d-flex align-items-center" title="Sign Out of Session" onclick="handleNavbarLogout(event)">
+          <i class="bi bi-box-arrow-right"></i>
+          <span class="d-none d-sm-inline ms-1">Logout</span>
         </a>
       </li>
     </ul>
   </div>
 </nav>
+
+<script>
+  function setAdminlteTheme(themeSetting) {
+    try {
+      localStorage.setItem('adminlte_theme', themeSetting);
+      let effectiveTheme = themeSetting;
+      if (themeSetting === 'auto') {
+        effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-bs-theme', effectiveTheme);
+      document.documentElement.setAttribute('data-theme-setting', themeSetting);
+      updateThemeUI(themeSetting, effectiveTheme);
+      window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: effectiveTheme, setting: themeSetting } }));
+    } catch (e) {
+      console.error('Error switching theme:', e);
+    }
+  }
+
+  function updateThemeUI(themeSetting, effectiveTheme) {
+    const activeIcon = document.getElementById('theme-active-icon');
+    if (activeIcon) {
+      if (themeSetting === 'light') {
+        activeIcon.className = 'bi bi-sun-fill text-warning';
+      } else if (themeSetting === 'dark') {
+        activeIcon.className = 'bi bi-moon-stars-fill text-info';
+      } else {
+        activeIcon.className = 'bi bi-circle-half text-secondary';
+      }
+    }
+
+    document.querySelectorAll('.check-icon').forEach(icon => {
+      if (icon.getAttribute('data-check') === themeSetting) {
+        icon.classList.remove('d-none');
+      } else {
+        icon.classList.add('d-none');
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const currentSetting = localStorage.getItem('adminlte_theme') || 'light';
+    let effective = currentSetting;
+    if (currentSetting === 'auto') {
+      effective = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    updateThemeUI(currentSetting, effective);
+
+    // Watch for OS preference change if on auto
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      if ((localStorage.getItem('adminlte_theme') || 'light') === 'auto') {
+        const newTheme = e.matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-bs-theme', newTheme);
+        window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme, setting: 'auto' } }));
+      }
+    });
+  });
+
+  function switchUserRole(username, event) {
+    try {
+      localStorage.setItem('ht_tmis_user', username);
+      document.cookie = 'auth_session=' + encodeURIComponent(username) + '; path=/; SameSite=Lax; max-age=28800';
+    } catch (_) {}
+  }
+
+  function handleNavbarLogout(event) {
+    try {
+      localStorage.removeItem('ht_tmis_user');
+      sessionStorage.clear();
+      document.cookie = 'auth_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+      document.cookie = 'auth_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure';
+    } catch (_) {}
+  }
+</script>

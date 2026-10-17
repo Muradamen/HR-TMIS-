@@ -9,17 +9,17 @@
     <%- include('../partials/sidebar', { activeNav: 'register', activeSubNav: 'register_legal' }) %>
 
     <main class="app-main">
-      <div class="app-content-header py-3 bg-white border-bottom mb-4">
+      <div class="app-content-header py-3 bg-body border-bottom mb-4">
         <div class="container-fluid">
-          <div class="row align-items-center">
+          <div class="row align-items-center g-2">
             <div class="col-sm-7">
-              <h3 class="mb-0 fw-bold text-dark">
+              <h3 class="mb-0 fw-bold text-body">
                 <i class="bi bi-briefcase-fill text-primary me-2"></i>Legal Trader Registration
               </h3>
               <p class="text-muted small mb-0">Record formal commercial entity, TIN, and trade license</p>
             </div>
-            <div class="col-sm-5 text-sm-end mt-2 mt-sm-0">
-              <a href="/traders/register/" class="btn btn-outline-secondary me-1">
+            <div class="col-sm-5 text-sm-end mt-2 mt-sm-0 d-flex justify-content-sm-end gap-2 flex-wrap">
+              <a href="/traders/register/" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left me-1"></i> Category Choice
               </a>
               <a href="/traders/" class="btn btn-outline-secondary">
@@ -45,9 +45,9 @@
               <form action="/traders/register/legal/" method="POST" class="needs-validation">
                 <!-- Section A: Enterprise & Tax Identification -->
                 <div class="card border-0 shadow-sm rounded-3 mb-4">
-                  <div class="card-header bg-white py-3 border-bottom">
+                  <div class="card-header bg-body py-3 border-bottom">
                     <span class="badge bg-primary me-2">SECTION A</span>
-                    <strong class="text-dark">Enterprise & Tax Identification</strong>
+                    <strong class="text-body">Enterprise & Tax Identification</strong>
                   </div>
                   <div class="card-body p-4">
                     <div class="row g-3">
@@ -95,9 +95,9 @@
 
                 <!-- Section B: Business Location -->
                 <div class="card border-0 shadow-sm rounded-3 mb-4">
-                  <div class="card-header bg-white py-3 border-bottom">
+                  <div class="card-header bg-body py-3 border-bottom">
                     <span class="badge bg-primary me-2">SECTION B</span>
-                    <strong class="text-dark">Commercial Location Details (Harari Region)</strong>
+                    <strong class="text-body">Commercial Location Details (Harari Region)</strong>
                   </div>
                   <div class="card-body p-4">
                     <div class="row g-3">
@@ -126,9 +126,9 @@
 
                 <!-- Section C: Trade Sector & Structure -->
                 <div class="card border-0 shadow-sm rounded-3 mb-4">
-                  <div class="card-header bg-white py-3 border-bottom">
+                  <div class="card-header bg-body py-3 border-bottom">
                     <span class="badge bg-primary me-2">SECTION C</span>
-                    <strong class="text-dark">Business Classification & Scale</strong>
+                    <strong class="text-body">Business Classification & Scale</strong>
                   </div>
                   <div class="card-body p-4">
                     <div class="row g-3">
@@ -174,9 +174,9 @@
 
                 <!-- Section D: Administration -->
                 <div class="card border-0 shadow-sm rounded-3 mb-4">
-                  <div class="card-header bg-white py-3 border-bottom">
+                  <div class="card-header bg-body py-3 border-bottom">
                     <span class="badge bg-primary me-2">SECTION D</span>
-                    <strong class="text-dark">Administrative & Inspection Data</strong>
+                    <strong class="text-body">Administrative & Inspection Data</strong>
                   </div>
                   <div class="card-body p-4">
                     <div class="row g-3">
@@ -202,15 +202,15 @@
                 </div>
 
                 <!-- Workflow Actions: Save Draft vs Submit -->
-                <div class="d-flex justify-content-between align-items-center mb-5">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-5">
                   <a href="/traders/register/" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-1"></i> Back
                   </a>
-                  <div class="d-flex gap-2">
-                    <button type="submit" name="submit_action" value="draft" class="btn btn-outline-secondary px-4 py-2 fw-semibold">
+                  <div class="d-flex gap-2 flex-wrap">
+                    <button type="submit" name="submit_action" value="draft" class="btn btn-outline-secondary px-3 px-sm-4 py-2 fw-semibold">
                       <i class="bi bi-save me-1"></i> Save as Draft
                     </button>
-                    <button type="submit" name="submit_action" value="submit" class="btn btn-primary px-5 py-2 fw-semibold shadow-sm">
+                    <button type="submit" name="submit_action" value="submit" class="btn btn-primary px-4 px-sm-5 py-2 fw-semibold shadow-sm">
                       <i class="bi bi-send-check me-1"></i> Submit for Verification
                     </button>
                   </div>

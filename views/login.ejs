@@ -30,6 +30,14 @@
   </style>
 </head>
 <body class="login-page">
+  <!-- Floating Theme Switcher on Login Page -->
+  <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050;">
+    <button class="btn btn-sm btn-outline-secondary d-flex align-items-center bg-body shadow-sm" id="loginThemeToggle" onclick="toggleLoginTheme()" title="Toggle Light / Dark mode">
+      <i class="bi bi-circle-half me-1" id="loginThemeIcon"></i>
+      <span class="small" id="loginThemeLabel">Theme</span>
+    </button>
+  </div>
+
   <div class="login-box px-3">
     <div class="text-center mb-3">
       <div class="brand-logo-circle mb-2">
@@ -40,7 +48,7 @@
       <div class="text-secondary small">Trade & Industry Development Bureau</div>
     </div>
 
-    <div class="card border-0 shadow-lg rounded-4 overflow-hidden bg-white">
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
       <div class="card-header bg-harari py-3 text-center">
         <h5 class="mb-0 text-white fw-bold">System Sign In</h5>
         <small class="opacity-90 text-white">Trader Management Information System</small>
@@ -61,11 +69,11 @@
           </div>
         <% } %>
 
-        <form action="/login" method="POST" class="mb-3">
+        <form id="loginForm" action="/login" method="POST" class="mb-3" onsubmit="return handleFormSubmit()">
           <div class="mb-3">
             <label class="form-label small fw-semibold text-secondary" for="username">Username</label>
             <div class="input-group">
-              <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
+              <span class="input-group-text bg-body-secondary text-muted"><i class="bi bi-person"></i></span>
               <input
                 type="text"
                 class="form-control"
@@ -81,7 +89,7 @@
           <div class="mb-3">
             <label class="form-label small fw-semibold text-secondary" for="password">Password</label>
             <div class="input-group">
-              <span class="input-group-text bg-light text-muted"><i class="bi bi-lock"></i></span>
+              <span class="input-group-text bg-body-secondary text-muted"><i class="bi bi-lock"></i></span>
               <input
                 type="password"
                 class="form-control"
@@ -93,22 +101,26 @@
             </div>
           </div>
 
-          <button type="submit" class="btn btn-success w-100 py-2 fw-bold shadow-sm">
+          <button type="submit" id="submitBtn" class="btn btn-success w-100 py-2 fw-bold shadow-sm">
             <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to System
           </button>
         </form>
 
         <div class="border-top pt-3">
-          <div class="small fw-semibold text-muted text-uppercase mb-2 text-center" style="font-size: 0.75rem;">
-            Quick Login (Test Accounts by Role)
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="small fw-bold text-muted text-uppercase" style="font-size: 0.75rem;">
+              Quick Sign In (1-Click Roles)
+            </span>
+            <span class="badge bg-success bg-opacity-10 text-success small" style="font-size: 0.7rem;">Click to Log In</span>
           </div>
 
           <div class="row g-2">
             <div class="col-6">
               <button
                 type="button"
-                class="btn btn-sm btn-outline-primary w-100 text-start py-2"
-                onclick="fillLogin('encoder', 'encoder12345')"
+                class="btn btn-sm btn-outline-primary w-100 text-start py-2 h-100 position-relative"
+                onclick="quickLogin('encoder', 'encoder12345')"
+                title="Click to sign in immediately as Data Encoder"
               >
                 <div class="fw-bold text-truncate"><i class="bi bi-input-cursor-text me-1"></i> Data Encoder</div>
                 <div class="small text-muted" style="font-size: 0.7rem;">encoder / encoder12345</div>
@@ -117,8 +129,9 @@
             <div class="col-6">
               <button
                 type="button"
-                class="btn btn-sm btn-outline-success w-100 text-start py-2"
-                onclick="fillLogin('director', 'director12345')"
+                class="btn btn-sm btn-outline-success w-100 text-start py-2 h-100 position-relative"
+                onclick="quickLogin('director', 'director12345')"
+                title="Click to sign in immediately as Director of Control"
               >
                 <div class="fw-bold text-truncate"><i class="bi bi-clipboard-check me-1"></i> Director Control</div>
                 <div class="small text-muted" style="font-size: 0.7rem;">director / director12345</div>
@@ -127,8 +140,9 @@
             <div class="col-6">
               <button
                 type="button"
-                class="btn btn-sm btn-outline-secondary w-100 text-start py-2"
-                onclick="fillLogin('admin', 'admin12345')"
+                class="btn btn-sm btn-outline-secondary w-100 text-start py-2 h-100 position-relative"
+                onclick="quickLogin('admin', 'admin12345')"
+                title="Click to sign in immediately as Administrator"
               >
                 <div class="fw-bold text-truncate"><i class="bi bi-gear-fill me-1"></i> Administrator</div>
                 <div class="small text-muted" style="font-size: 0.7rem;">admin / admin12345</div>
@@ -137,8 +151,9 @@
             <div class="col-6">
               <button
                 type="button"
-                class="btn btn-sm btn-outline-warning w-100 text-start py-2"
-                onclick="fillLogin('leader', 'leader12345')"
+                class="btn btn-sm btn-outline-warning w-100 text-start py-2 h-100 position-relative"
+                onclick="quickLogin('leader', 'leader12345')"
+                title="Click to sign in immediately as Agency Leader"
               >
                 <div class="fw-bold text-truncate"><i class="bi bi-award-fill me-1"></i> Agency Leader</div>
                 <div class="small text-muted" style="font-size: 0.7rem;">leader / leader12345</div>
@@ -147,16 +162,71 @@
           </div>
         </div>
       </div>
-      <div class="card-footer bg-light py-2 text-center small text-muted">
+      <div class="card-footer bg-body-secondary py-2 text-center small text-muted border-top">
         Harari Regional State &bull; Secured Enterprise Access
       </div>
     </div>
   </div>
 
   <script>
+    function updateLoginThemeIcon(theme) {
+      const icon = document.getElementById('loginThemeIcon');
+      const label = document.getElementById('loginThemeLabel');
+      if (icon && label) {
+        if (theme === 'dark') {
+          icon.className = 'bi bi-moon-stars-fill text-info me-1';
+          label.textContent = 'Dark';
+        } else {
+          icon.className = 'bi bi-sun-fill text-warning me-1';
+          label.textContent = 'Light';
+        }
+      }
+    }
+
+    function toggleLoginTheme() {
+      const current = document.documentElement.getAttribute('data-bs-theme') || 'light';
+      const target = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-bs-theme', target);
+      try {
+        localStorage.setItem('adminlte_theme', target);
+      } catch (_) {}
+      updateLoginThemeIcon(target);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const current = document.documentElement.getAttribute('data-bs-theme') || 'light';
+      updateLoginThemeIcon(current);
+    });
+
+    function saveSession(username) {
+      try {
+        localStorage.setItem('ht_tmis_user', username);
+        document.cookie = 'auth_session=' + encodeURIComponent(username) + '; path=/; SameSite=Lax; max-age=28800';
+      } catch (_) {}
+    }
+
     function fillLogin(u, p) {
       document.getElementById('username').value = u;
       document.getElementById('password').value = p;
+    }
+
+    function quickLogin(u, p) {
+      fillLogin(u, p);
+      saveSession(u);
+      const btn = document.getElementById('submitBtn');
+      if (btn) {
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Signing In...';
+        btn.disabled = true;
+      }
+      document.getElementById('loginForm').submit();
+    }
+
+    function handleFormSubmit() {
+      const u = document.getElementById('username').value.trim();
+      if (u) {
+        saveSession(u);
+      }
+      return true;
     }
   </script>
 </body>

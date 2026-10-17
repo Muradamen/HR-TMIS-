@@ -9,11 +9,11 @@
     <%- include('../partials/sidebar', { activeNav: 'audit', activeSubNav: '' }) %>
 
     <main class="app-main">
-      <div class="app-content-header py-3 bg-white border-bottom mb-4">
+      <div class="app-content-header py-3 bg-body border-bottom mb-4">
         <div class="container-fluid">
-          <div class="row align-items-center">
+          <div class="row align-items-center g-2">
             <div class="col-sm-6">
-              <h3 class="mb-0 fw-bold text-dark">
+              <h3 class="mb-0 fw-bold text-body">
                 <i class="bi bi-clock-history text-secondary me-2"></i>System Audit Trail
               </h3>
               <p class="text-muted small mb-0">Immutable tracking of registrations, status transitions, verifications, and regulatory activities</p>
@@ -30,7 +30,7 @@
       <div class="app-content">
         <div class="container-fluid">
           <div class="card border-0 shadow-sm rounded-3">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <div class="card-header bg-body py-3 d-flex justify-content-between align-items-center">
               <h5 class="card-title fw-bold mb-0">
                 Regulatory Action Log (<%= logs.length %> Records)
               </h5>
@@ -78,7 +78,7 @@
                           <% } %>
                         </td>
                         <td>
-                          <span class="badge bg-light text-dark border">
+                          <span class="badge bg-body-secondary text-body border">
                             <i class="bi bi-person me-1"></i><%= log.user %>
                           </span>
                         </td>

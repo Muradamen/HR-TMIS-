@@ -49,16 +49,69 @@ function getClientIp(req: express.Request): string {
   return req.socket.remoteAddress || '127.0.0.1';
 }
 
+// Helper: Set auth cookie safely across regular and iframe/HTTPS environments
+function setAuthCookies(req: express.Request, res: express.Response, username: string) {
+  const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  
+  // Primary session cookie
+  res.cookie('auth_session', username, {
+    httpOnly: false,
+    maxAge: 8 * 60 * 60 * 1000, // 8 hours
+    sameSite: isHttps ? 'none' : 'lax',
+    secure: isHttps,
+    path: '/',
+  });
+}
+
+function clearAuthCookies(req: express.Request, res: express.Response) {
+  const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  res.clearCookie('auth_session', {
+    path: '/',
+    sameSite: isHttps ? 'none' : 'lax',
+    secure: isHttps,
+  });
+  res.clearCookie('auth_session', { path: '/' });
+}
+
 // Global Authentication Middleware
 function authMiddleware(req: express.Request, res: express.Response, next: express.NextFunction) {
-  const sessionUser = req.cookies.auth_session;
-  if (sessionUser) {
-    const user = getUserByUsername(sessionUser);
+  let sessionUsername: string | undefined = undefined;
+
+  // 1. Check cookies
+  if (req.cookies && req.cookies.auth_session) {
+    sessionUsername = req.cookies.auth_session;
+  }
+
+  // 2. Check signed cookies
+  if (!sessionUsername && req.signedCookies && req.signedCookies.auth_session) {
+    sessionUsername = req.signedCookies.auth_session;
+  }
+
+  // 3. Check custom header (useful for AJAX & iframes)
+  if (!sessionUsername && typeof req.headers['x-auth-user'] === 'string') {
+    sessionUsername = req.headers['x-auth-user'];
+  }
+
+  // 4. Check Authorization Bearer
+  const authHeader = req.headers.authorization;
+  if (!sessionUsername && authHeader && authHeader.startsWith('Bearer ')) {
+    sessionUsername = authHeader.substring(7).trim();
+  }
+
+  // 5. Check URL query param fallback (?auth_user=...) for cross-site iframe redirects
+  if (!sessionUsername && typeof req.query.auth_user === 'string') {
+    sessionUsername = req.query.auth_user as string;
+  }
+
+  if (sessionUsername) {
+    const user = getUserByUsername(sessionUsername);
     if (user && user.is_active) {
       (req as any).user = user;
       res.locals.user = user;
+      // Re-affirm cookie so future requests carry it
+      setAuthCookies(req, res, user.username);
     } else {
-      res.clearCookie('auth_session');
+      clearAuthCookies(req, res);
     }
   }
 
@@ -73,7 +126,8 @@ app.use(authMiddleware);
 function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
   const user = (req as any).user;
   if (!user) {
-    return res.redirect('/login');
+    const nextUrl = encodeURIComponent(req.originalUrl || '/dashboard');
+    return res.redirect(`/login?next=${nextUrl}`);
   }
   next();
 }
@@ -99,7 +153,7 @@ function requireRole(...allowedRoles: UserRole[]) {
 // 1. ROOT & AUTHENTICATION ROUTES
 // ==========================================
 
-// Initial entry point: If not logged in, redirect to /login first!
+// Initial entry point
 app.get('/', (req, res) => {
   const user = (req as any).user;
   if (!user) {
@@ -127,46 +181,55 @@ app.post('/login', (req, res) => {
   const user = authenticateUser(username, password);
 
   if (!user) {
+    if (req.headers.accept?.includes('application/json')) {
+      return res.status(401).json({ success: false, error: 'Invalid username or password.' });
+    }
     return res.status(401).render('login', {
       title: 'Login Failed',
       error: 'Invalid username or password. Please use the demo credentials below.',
     });
   }
 
-  // Set session cookie
-  res.cookie('auth_session', user.username, {
-    httpOnly: true,
-    maxAge: 8 * 60 * 60 * 1000, // 8 hours
-    sameSite: 'lax',
-  });
-
+  setAuthCookies(req, res, user.username);
   logAudit('USER_LOGIN', 'SYSTEM', user.username, getClientIp(req), `User authenticated as ${user.role}`);
 
-  // Redirect to dashboard according to role
-  res.redirect('/dashboard');
+  if (req.headers.accept?.includes('application/json')) {
+    return res.json({ success: true, user, redirect: '/dashboard' });
+  }
+
+  const nextUrl = req.body.next || req.query.next || '/dashboard';
+  const cleanNext = typeof nextUrl === 'string' && nextUrl.startsWith('/') ? nextUrl : '/dashboard';
+  // Include query token to guarantee iframe persistence even if 3rd-party cookies are disabled
+  const separator = cleanNext.includes('?') ? '&' : '?';
+  res.redirect(`${cleanNext}${separator}auth_user=${encodeURIComponent(user.username)}`);
 });
 
-// Quick Role / User Switcher (for easy verification testing)
+// Quick Role / User Switcher
 app.get('/api/switch-user', (req, res) => {
   const targetUsername = req.query.user as string;
   const targetUser = getUserByUsername(targetUsername);
   if (targetUser) {
-    res.cookie('auth_session', targetUser.username, {
-      httpOnly: true,
-      maxAge: 8 * 60 * 60 * 1000,
-      sameSite: 'lax',
-    });
+    setAuthCookies(req, res, targetUser.username);
+    logAudit('USER_SWITCH_ROLE', 'SYSTEM', targetUser.username, getClientIp(req), `Switched active role to ${targetUser.role}`);
+    return res.redirect(`/dashboard?auth_user=${encodeURIComponent(targetUser.username)}`);
   }
   res.redirect('/dashboard');
 });
 
-// Logout Action
-app.get('/logout', (req, res) => {
+// Logout Action (handles both GET and POST)
+app.all(['/logout', '/api/logout'], (req, res) => {
   const user = (req as any).user;
   if (user) {
     logAudit('USER_LOGOUT', 'SYSTEM', user.username, getClientIp(req), 'User logged out');
   }
-  res.clearCookie('auth_session');
+  clearAuthCookies(req, res);
+  (req as any).user = null;
+  res.locals.user = null;
+
+  if (req.headers.accept?.includes('application/json')) {
+    return res.json({ success: true, redirect: '/login' });
+  }
+
   res.redirect('/login?flash=' + encodeURIComponent('You have been logged out successfully.'));
 });
 

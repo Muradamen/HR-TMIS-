@@ -6,6 +6,23 @@
   <title>{% block title %}{{ title|default:"HT-TMIS" }}{% endblock %} | Harari Region</title>
   <meta name="description" content="Harari Region Trader Management Information System (HT-TMIS) for managing legal and informal traders." />
 
+  <!-- AdminLTE 4 & Bootstrap 5 Immediate Theme Initializer -->
+  <script>
+    (function () {
+      try {
+        const storedTheme = localStorage.getItem('adminlte_theme') || 'light';
+        let activeTheme = storedTheme;
+        if (storedTheme === 'auto') {
+          activeTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-bs-theme', activeTheme);
+        document.documentElement.setAttribute('data-theme-setting', storedTheme);
+      } catch (_) {
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+      }
+    })();
+  </script>
+
   <!-- Local Fonts & Icons -->
   <link rel="stylesheet" href="/static/adminlte/plugins/bootstrap-icons/font/bootstrap-icons.min.css" />
 
@@ -23,9 +40,39 @@
       --brand-harari-green: #1b5e20;
       --brand-harari-gold: #c67d00;
     }
+
+    [data-bs-theme="dark"] {
+      --brand-harari-green: #2e7d32;
+      --bs-body-bg: #0f172a;
+      --bs-body-color: #e2e8f0;
+      --bs-tertiary-bg: #1e293b;
+      --bs-secondary-bg: #1e293b;
+      --bs-card-bg: #1e293b;
+      --bs-border-color: #334155;
+    }
+
+    [data-bs-theme="dark"] .bg-body-tertiary { background-color: #0f172a !important; }
+    [data-bs-theme="dark"] .app-header { background-color: #1e293b !important; border-color: #334155 !important; }
+    [data-bs-theme="dark"] .app-sidebar { background-color: #0b1120 !important; border-right: 1px solid #1e293b !important; }
+    [data-bs-theme="dark"] .app-sidebar .sidebar-brand { background-color: #0f172a !important; border-bottom: 1px solid #1e293b !important; }
+    [data-bs-theme="dark"] .card { background-color: #1e293b !important; border-color: #334155 !important; color: #e2e8f0; }
+    [data-bs-theme="dark"] .card-header, [data-bs-theme="dark"] .card-footer { background-color: #1e293b !important; border-color: #334155 !important; }
+    [data-bs-theme="dark"] .app-content-header { background-color: #1e293b !important; border-color: #334155 !important; }
+    [data-bs-theme="dark"] .app-footer { background-color: #1e293b !important; border-color: #334155 !important; }
+    [data-bs-theme="dark"] .table-light { background-color: #0f172a !important; color: #e2e8f0 !important; }
+    [data-bs-theme="dark"] .table-light th { background-color: #0f172a !important; color: #e2e8f0 !important; border-color: #334155 !important; }
+    [data-bs-theme="dark"] .table { --bs-table-color: #e2e8f0; --bs-table-bg: #1e293b; --bs-table-border-color: #334155; }
+    [data-bs-theme="dark"] .list-group-item { background-color: #1e293b !important; border-color: #334155 !important; color: #e2e8f0 !important; }
+    [data-bs-theme="dark"] .dropdown-menu { background-color: #1e293b !important; border-color: #334155 !important; }
+    [data-bs-theme="dark"] .dropdown-item { color: #e2e8f0 !important; }
+    [data-bs-theme="dark"] .dropdown-item:hover { background-color: #334155 !important; }
+    [data-bs-theme="dark"] .form-control, [data-bs-theme="dark"] .form-select { background-color: #0f172a !important; border-color: #334155 !important; color: #f1f5f9 !important; }
+    [data-bs-theme="dark"] .text-dark { color: #f1f5f9 !important; }
+    [data-bs-theme="dark"] .form-section-title { color: #4ade80 !important; border-bottom-color: #334155 !important; }
+
     .bg-harari {
       background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%) !important;
-      color: #ffffff;
+      color: #ffffff !important;
     }
     .app-sidebar .sidebar-brand {
       background-color: #144618;
@@ -50,7 +97,7 @@
       margin-top: 0.8rem;
     }
     @media print {
-      .app-sidebar, .app-header, .no-print, .btn, .breadcrumb { display: none !important; }
+      .app-sidebar, .app-header, .no-print, .btn, .breadcrumb, .theme-toggle-dropdown { display: none !important; }
       .app-wrapper { margin: 0 !important; padding: 0 !important; }
       .app-main { padding: 0 !important; }
     }

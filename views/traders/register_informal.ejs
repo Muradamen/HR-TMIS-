@@ -9,17 +9,17 @@
     <%- include('../partials/sidebar', { activeNav: 'register', activeSubNav: 'register_informal' }) %>
 
     <main class="app-main">
-      <div class="app-content-header py-3 bg-white border-bottom mb-4">
+      <div class="app-content-header py-3 bg-body border-bottom mb-4">
         <div class="container-fluid">
-          <div class="row align-items-center">
+          <div class="row align-items-center g-2">
             <div class="col-sm-7">
-              <h3 class="mb-0 fw-bold text-dark">
+              <h3 class="mb-0 fw-bold text-body">
                 <i class="bi bi-person-lines-fill text-warning me-2"></i>Informal Trader Enumeration & Assessment
               </h3>
               <p class="text-muted small mb-0">Survey informal operators, open-market vendors, and record formalization recommendations</p>
             </div>
-            <div class="col-sm-5 text-sm-end mt-2 mt-sm-0">
-              <a href="/traders/register/" class="btn btn-outline-secondary me-1">
+            <div class="col-sm-5 text-sm-end mt-2 mt-sm-0 d-flex justify-content-sm-end gap-2 flex-wrap">
+              <a href="/traders/register/" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left me-1"></i> Category Choice
               </a>
               <a href="/traders/" class="btn btn-outline-secondary">
@@ -45,9 +45,9 @@
               <form action="/traders/register/informal/" method="POST" class="needs-validation">
                 <!-- Section 1: Personal Identification -->
                 <div class="card border-0 shadow-sm rounded-3 mb-4">
-                  <div class="card-header bg-white py-3 border-bottom">
+                  <div class="card-header bg-body py-3 border-bottom">
                     <span class="badge bg-warning text-dark me-2">SECTION 1</span>
-                    <strong class="text-dark">Operator Personal Details & Identification</strong>
+                    <strong class="text-body">Operator Personal Details & Identification</strong>
                   </div>
                   <div class="card-body p-4">
                     <div class="row g-3">
@@ -81,9 +81,9 @@
 
                 <!-- Section 2: Operating Location -->
                 <div class="card border-0 shadow-sm rounded-3 mb-4">
-                  <div class="card-header bg-white py-3 border-bottom">
+                  <div class="card-header bg-body py-3 border-bottom">
                     <span class="badge bg-warning text-dark me-2">SECTION 2</span>
-                    <strong class="text-dark">Trading Location (Harari Region)</strong>
+                    <strong class="text-body">Trading Location (Harari Region)</strong>
                   </div>
                   <div class="card-body p-4">
                     <div class="row g-3">
@@ -117,9 +117,9 @@
 
                 <!-- Section 3: Activity & Capital -->
                 <div class="card border-0 shadow-sm rounded-3 mb-4">
-                  <div class="card-header bg-white py-3 border-bottom">
+                  <div class="card-header bg-body py-3 border-bottom">
                     <span class="badge bg-warning text-dark me-2">SECTION 3</span>
-                    <strong class="text-dark">Activity Nature & Economic Profile</strong>
+                    <strong class="text-body">Activity Nature & Economic Profile</strong>
                   </div>
                   <div class="card-body p-4">
                     <div class="row g-3">
@@ -156,9 +156,9 @@
 
                 <!-- Section 4: Formalization Recommendation -->
                 <div class="card border-0 shadow-sm rounded-3 mb-4">
-                  <div class="card-header bg-white py-3 border-bottom">
+                  <div class="card-header bg-body py-3 border-bottom">
                     <span class="badge bg-warning text-dark me-2">SECTION 4</span>
-                    <strong class="text-dark">Enumerator Assessment & Formalization Recommendation</strong>
+                    <strong class="text-body">Enumerator Assessment & Formalization Recommendation</strong>
                   </div>
                   <div class="card-body p-4">
                     <div class="row g-3">
@@ -186,15 +186,15 @@
                 </div>
 
                 <!-- Workflow Actions: Save Draft vs Submit -->
-                <div class="d-flex justify-content-between align-items-center mb-5">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-5">
                   <a href="/traders/register/" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-1"></i> Back
                   </a>
-                  <div class="d-flex gap-2">
-                    <button type="submit" name="submit_action" value="draft" class="btn btn-outline-secondary px-4 py-2 fw-semibold">
+                  <div class="d-flex gap-2 flex-wrap">
+                    <button type="submit" name="submit_action" value="draft" class="btn btn-outline-secondary px-3 px-sm-4 py-2 fw-semibold">
                       <i class="bi bi-save me-1"></i> Save as Draft
                     </button>
-                    <button type="submit" name="submit_action" value="submit" class="btn btn-warning px-5 py-2 fw-semibold shadow-sm text-dark">
+                    <button type="submit" name="submit_action" value="submit" class="btn btn-warning px-4 px-sm-5 py-2 fw-semibold shadow-sm text-dark">
                       <i class="bi bi-send-check me-1"></i> Submit for Verification
                     </button>
                   </div>

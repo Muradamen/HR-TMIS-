@@ -9,16 +9,16 @@
     <%- include('../partials/sidebar', { activeNav: 'traders', activeSubNav: '' }) %>
 
     <main class="app-main">
-      <div class="app-content-header py-3 bg-white border-bottom mb-4">
+      <div class="app-content-header py-3 bg-body border-bottom mb-4">
         <div class="container-fluid">
-          <div class="row align-items-center">
+          <div class="row align-items-center g-2">
             <div class="col-sm-6">
-              <h3 class="mb-0 fw-bold text-dark">
+              <h3 class="mb-0 fw-bold text-body">
                 <i class="bi bi-people-fill text-primary me-2"></i>Traders Registry
               </h3>
               <p class="text-muted small mb-0">Official registry of formal businesses and surveyed informal enterprises</p>
             </div>
-            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0 d-flex justify-content-sm-end gap-2">
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0 d-flex justify-content-sm-end gap-2 flex-wrap">
               <!-- Export Buttons -->
               <a href="/traders/export/excel?<%= queryString %>" class="btn btn-outline-success shadow-sm" title="Export current search results to Excel (.xlsx)">
                 <i class="bi bi-file-earmark-excel-fill me-1"></i> Excel (.xlsx)
@@ -53,7 +53,7 @@
               <form action="/traders/" method="GET" class="row g-2 align-items-center">
                 <div class="col-12 col-md-3">
                   <div class="input-group">
-                    <span class="input-group-text bg-light border-end-0">
+                    <span class="input-group-text bg-body-secondary border-end-0">
                       <i class="bi bi-search text-muted"></i>
                     </span>
                     <input
@@ -125,7 +125,7 @@
 
           <!-- Traders List Table Card -->
           <div class="card border-0 shadow-sm rounded-3">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <div class="card-header bg-body py-3 d-flex justify-content-between align-items-center">
               <h5 class="card-title fw-bold mb-0">
                 Found <%= totalCount %> <%= totalCount === 1 ? 'Trader' : 'Traders' %>
                 <span class="small text-muted fw-normal">
@@ -189,12 +189,12 @@
                           </td>
                           <td>
                             <% if (trader.trader_type === 'LEGAL') { %>
-                              <span class="badge bg-light text-dark border">
+                              <span class="badge bg-body-secondary text-body border">
                                 <%= trader.legal_details.business_sector.replace(/_/g, ' ') %>
                               </span>
                               <div class="small text-muted"><%= trader.legal_details.trade_scale %></div>
                             <% } else { %>
-                              <span class="badge bg-light text-dark border">
+                              <span class="badge bg-body-secondary text-body border">
                                 <%= trader.informal_details.nature_of_trade_activity.replace(/_/g, ' ') %>
                               </span>
                               <div class="small text-muted"><%= trader.informal_details.formalization_status_recommendation.replace(/_/g, ' ') %></div>
@@ -240,7 +240,7 @@
 
             <!-- 25 Records / Page Pagination Controls -->
             <% if (totalPages > 1) { %>
-              <div class="card-footer bg-white py-3 border-top d-flex justify-content-between align-items-center">
+              <div class="card-footer bg-body py-3 border-top d-flex justify-content-between align-items-center">
                 <div class="small text-muted">
                   Showing records <strong><%= (currentPage - 1) * 25 + 1 %></strong> to <strong><%= Math.min(currentPage * 25, totalCount) %></strong> of <strong><%= totalCount %></strong>
                 </div>

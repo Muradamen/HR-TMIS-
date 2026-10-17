@@ -1,6 +1,41 @@
 {
   "traders": [
     {
+      "id": 7,
+      "trader_code": "HT-2026-000007",
+      "trader_type": "LEGAL",
+      "status": "APPROVED",
+      "registered_by": "encoder",
+      "submitted_at": "2026-10-17T18:22:40.403Z",
+      "created_at": "2026-10-17T18:22:40.403Z",
+      "updated_at": "2026-10-17T18:22:53.410Z",
+      "legal_details": {
+        "trade_name": "AuditTestTradingCo",
+        "owner_full_name": "AuditOwner",
+        "tin": "0099887766",
+        "trade_registration_number": "HR-TR-999",
+        "trade_license_number": "",
+        "gender": "FEMALE",
+        "age": 32,
+        "region": "Harari Region",
+        "woreda_id": 1,
+        "kebele_id": 101,
+        "house_number_plot_id": "",
+        "business_sector": "GENERAL_TRADE",
+        "trade_scale": "RETAIL",
+        "business_ownership_type": "SOLE_PROPRIETORSHIP",
+        "issuing_institution": "Harari Trade & Industry Development Bureau",
+        "date_of_issuance": "2026-10-17",
+        "data_entered_by": "Dawit Bekele",
+        "remarks": "",
+        "officer_signature": ""
+      },
+      "reviewed_by": "director",
+      "reviewed_at": "2026-10-17T18:22:49.829Z",
+      "verified_by": "director",
+      "verified_at": "2026-10-17T18:22:53.410Z"
+    },
+    {
       "id": 6,
       "trader_code": "HT-2026-000006",
       "trader_type": "INFORMAL",
@@ -185,6 +220,168 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": 30,
+      "action": "DATA_EXPORT_EXCEL",
+      "target_id": "REGISTRY",
+      "user": "director",
+      "ip_address": "127.0.0.1",
+      "timestamp": "2026-10-17 18:23:00",
+      "details": "Exported 7 trader records to Excel"
+    },
+    {
+      "id": 29,
+      "action": "WORKFLOW_APPROVED",
+      "target_id": "HT-2026-000007",
+      "user": "director",
+      "ip_address": "127.0.0.1",
+      "timestamp": "2026-10-17 18:22:53",
+      "details": "Transitioned status from UNDER_REVIEW to APPROVED. Notes: Documentation verified and approved"
+    },
+    {
+      "id": 28,
+      "action": "WORKFLOW_UNDER_REVIEW",
+      "target_id": "HT-2026-000007",
+      "user": "director",
+      "ip_address": "127.0.0.1",
+      "timestamp": "2026-10-17 18:22:49",
+      "details": "Transitioned status from SUBMITTED to UNDER_REVIEW. Notes: Commenced regulatory documentation review"
+    },
+    {
+      "id": 27,
+      "action": "TRADER_SUBMITTED",
+      "target_id": "HT-2026-000007",
+      "user": "encoder",
+      "ip_address": "127.0.0.1",
+      "timestamp": "2026-10-17 18:22:40",
+      "details": "Registered Legal Trader (SUBMITTED): AuditTestTradingCo (Owner: AuditOwner)"
+    },
+    {
+      "id": 26,
+      "action": "USER_LOGIN",
+      "target_id": "SYSTEM",
+      "user": "director",
+      "ip_address": "196.191.32.247",
+      "timestamp": "2026-10-17 18:17:31",
+      "details": "User authenticated as DIRECTOR_OF_TRADER_CONTROL"
+    },
+    {
+      "id": 25,
+      "action": "USER_LOGIN",
+      "target_id": "SYSTEM",
+      "user": "director",
+      "ip_address": "196.191.32.247",
+      "timestamp": "2026-10-17 18:17:22",
+      "details": "User authenticated as DIRECTOR_OF_TRADER_CONTROL"
+    },
+    {
+      "id": 24,
+      "action": "USER_LOGIN",
+      "target_id": "SYSTEM",
+      "user": "encoder",
+      "ip_address": "196.191.32.247",
+      "timestamp": "2026-10-17 18:17:11",
+      "details": "User authenticated as DATA_ENCODER"
+    },
+    {
+      "id": 23,
+      "action": "USER_SWITCH_ROLE",
+      "target_id": "SYSTEM",
+      "user": "director",
+      "ip_address": "127.0.0.1",
+      "timestamp": "2026-10-17 17:23:27",
+      "details": "Switched active role to DIRECTOR_OF_TRADER_CONTROL"
+    },
+    {
+      "id": 22,
+      "action": "USER_LOGIN",
+      "target_id": "SYSTEM",
+      "user": "encoder",
+      "ip_address": "127.0.0.1",
+      "timestamp": "2026-10-17 17:23:09",
+      "details": "User authenticated as DATA_ENCODER"
+    },
+    {
+      "id": 21,
+      "action": "USER_LOGIN",
+      "target_id": "SYSTEM",
+      "user": "admin",
+      "ip_address": "127.0.0.1",
+      "timestamp": "2026-10-17 17:17:35",
+      "details": "User authenticated as ADMINISTRATOR"
+    },
+    {
+      "id": 20,
+      "action": "USER_LOGIN",
+      "target_id": "SYSTEM",
+      "user": "encoder",
+      "ip_address": "196.191.32.247",
+      "timestamp": "2026-10-17 17:15:00",
+      "details": "User authenticated as DATA_ENCODER"
+    },
+    {
+      "id": 19,
+      "action": "USER_LOGIN",
+      "target_id": "SYSTEM",
+      "user": "encoder",
+      "ip_address": "196.191.32.247",
+      "timestamp": "2026-10-17 17:10:41",
+      "details": "User authenticated as DATA_ENCODER"
+    },
+    {
+      "id": 18,
+      "action": "USER_LOGIN",
+      "target_id": "SYSTEM",
+      "user": "admin",
+      "ip_address": "196.191.32.247",
+      "timestamp": "2026-10-17 17:09:58",
+      "details": "User authenticated as ADMINISTRATOR"
+    },
+    {
+      "id": 17,
+      "action": "USER_LOGIN",
+      "target_id": "SYSTEM",
+      "user": "director",
+      "ip_address": "196.191.32.247",
+      "timestamp": "2026-10-17 17:09:48",
+      "details": "User authenticated as DIRECTOR_OF_TRADER_CONTROL"
+    },
+    {
+      "id": 16,
+      "action": "USER_LOGIN",
+      "target_id": "SYSTEM",
+      "user": "leader",
+      "ip_address": "196.191.32.247",
+      "timestamp": "2026-10-17 17:08:06",
+      "details": "User authenticated as AGENCY_LEADER"
+    },
+    {
+      "id": 15,
+      "action": "USER_LOGIN",
+      "target_id": "SYSTEM",
+      "user": "director",
+      "ip_address": "196.191.32.247",
+      "timestamp": "2026-10-17 17:08:01",
+      "details": "User authenticated as DIRECTOR_OF_TRADER_CONTROL"
+    },
+    {
+      "id": 14,
+      "action": "USER_LOGIN",
+      "target_id": "SYSTEM",
+      "user": "encoder",
+      "ip_address": "196.191.32.247",
+      "timestamp": "2026-10-17 17:07:52",
+      "details": "User authenticated as DATA_ENCODER"
+    },
+    {
+      "id": 13,
+      "action": "USER_LOGIN",
+      "target_id": "SYSTEM",
+      "user": "encoder",
+      "ip_address": "196.191.32.247",
+      "timestamp": "2026-10-17 17:07:42",
+      "details": "User authenticated as DATA_ENCODER"
+    },
     {
       "id": 12,
       "action": "WORKFLOW_APPROVED",

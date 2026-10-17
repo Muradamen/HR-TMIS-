@@ -9,11 +9,11 @@
     <%- include('../partials/sidebar', { activeNav: 'locations', activeSubNav: '' }) %>
 
     <main class="app-main">
-      <div class="app-content-header py-3 bg-white border-bottom mb-4">
+      <div class="app-content-header py-3 bg-body border-bottom mb-4">
         <div class="container-fluid">
-          <div class="row align-items-center">
+          <div class="row align-items-center g-2">
             <div class="col-sm-6">
-              <h3 class="mb-0 fw-bold text-dark">
+              <h3 class="mb-0 fw-bold text-body">
                 <i class="bi bi-geo-alt-fill text-danger me-2"></i>Harari Region Administrative Locations
               </h3>
               <p class="text-muted small mb-0">Woredas and Kebeles governing municipal and trade jurisdictions</p>
@@ -31,9 +31,9 @@
         <div class="container-fluid">
           <div class="row g-4">
             <% woredas.forEach(w => { %>
-              <div class="col-md-6 col-lg-4">
+              <div class="col-12 col-md-6 col-lg-4">
                 <div class="card border-0 shadow-sm rounded-3 h-100">
-                  <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                  <div class="card-header bg-body py-3 d-flex justify-content-between align-items-center">
                     <div>
                       <h5 class="fw-bold mb-0 text-success"><%= w.name %></h5>
                       <small class="text-muted font-monospace">Code: <%= w.code %></small>

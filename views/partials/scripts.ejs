@@ -50,5 +50,13 @@
         } catch (_) {}
       }, 5000);
     });
+
+    // Ensure session consistency across navigations
+    try {
+      <% if (typeof user !== 'undefined' && user && user.username) { %>
+        localStorage.setItem('ht_tmis_user', '<%= user.username %>');
+        document.cookie = 'auth_session=<%= encodeURIComponent(user.username) %>; path=/; SameSite=Lax; max-age=28800';
+      <% } %>
+    } catch (_) {}
   });
 </script>
