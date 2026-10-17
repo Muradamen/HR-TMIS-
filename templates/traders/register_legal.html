@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Legal Trader{% endblock %}
+
+{% block content %}
+<div class="app-content-header py-3 bg-white border-bottom mb-4">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      <div class="col-sm-7">
+        <h3 class="mb-0 fw-bold text-dark">
+          <i class="bi bi-briefcase-fill text-primary me-2"></i>Legal Trader Registration
+        </h3>
+        <p class="text-muted small mb-0">Record formal commercial entity, TIN, and trade license</p>
+      </div>
+      <div class="col-sm-5 text-sm-end mt-2 mt-sm-0">
+        <a href="{% url 'traders:register_choice' %}" class="btn btn-outline-secondary me-1">
+          <i class="bi bi-arrow-left me-1"></i> Category Choice
+        </a>
+        <a href="{% url 'traders:list' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-x-circle me-1"></i> Cancel
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-content">
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-xl-10">
+
+        {% if form.errors %}
+          <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Please correct the following errors:</strong>
+            <ul class="mb-0 mt-2">
+              {% for field in form %}
+                {% for error in field.errors %}
+                  <li>{{ field.label }}: {{ error }}</li>
+                {% endfor %}
+              {% endfor %}
+              {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endif %}
+
+        <form action="{% url 'traders:register_legal' %}" method="POST" class="needs-validation">
+          {% csrf_token %}
+
+          <!-- Section A: Enterprise & Tax Identification -->
+          <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+              <span class="badge bg-primary me-2">SECTION A</span>
+              <strong class="text-dark">Enterprise & Tax Identification</strong>
+            </div>
+            <div class="card-body p-4">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="{{ form.trade_name.id_for_label }}">
+                    Trade Name / Company Name <span class="text-danger">*</span>
+                  </label>
+                  {{ form.trade_name }}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="{{ form.owner_full_name.id_for_label }}">
+                    Owner Full Name <span class="text-danger">*</span>
+                  </label>
+                  {{ form.owner_full_name }}
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold" for="{{ form.tin.id_for_label }}">
+                    TIN (Taxpayer Identification Number) <span class="text-danger">*</span>
+                  </label>
+                  {{ form.tin }}
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold" for="{{ form.trade_registration_number.id_for_label }}">
+                    Trade Registration Number <span class="text-danger">*</span>
+                  </label>
+                  {{ form.trade_registration_number }}
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold" for="{{ form.trade_license_number.id_for_label }}">
+                    Trade License Number
+                  </label>
+                  {{ form.trade_license_number }}
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold" for="{{ form.gender.id_for_label }}">
+                    Gender <span class="text-danger">*</span>
+                  </label>
+                  {{ form.gender }}
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold" for="{{ form.age.id_for_label }}">
+                    Age <span class="text-danger">*</span>
+                  </label>
+                  {{ form.age }}
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold" for="{{ form.region.id_for_label }}">
+                    Region
+                  </label>
+                  {{ form.region }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section B: Business Location -->
+          <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+              <span class="badge bg-primary me-2">SECTION B</span>
+              <strong class="text-dark">Commercial Location Details (Harari Region)</strong>
+            </div>
+            <div class="card-body p-4">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold" for="{{ form.woreda.id_for_label }}">
+                    Woreda <span class="text-danger">*</span>
+                  </label>
+                  {{ form.woreda }}
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold" for="{{ form.kebele.id_for_label }}">
+                    Kebele <span class="text-danger">*</span>
+                  </label>
+                  {{ form.kebele }}
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold" for="{{ form.house_number_plot_id.id_for_label }}">
+                    House Number / Plot ID
+                  </label>
+                  {{ form.house_number_plot_id }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section C: Trade Sector & Structure -->
+          <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+              <span class="badge bg-primary me-2">SECTION C</span>
+              <strong class="text-dark">Business Classification & Scale</strong>
+            </div>
+            <div class="card-body p-4">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold" for="{{ form.business_sector.id_for_label }}">
+                    Business Sector <span class="text-danger">*</span>
+                  </label>
+                  {{ form.business_sector }}
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold" for="{{ form.trade_scale.id_for_label }}">
+                    Trade Scale <span class="text-danger">*</span>
+                  </label>
+                  {{ form.trade_scale }}
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold" for="{{ form.business_ownership_type.id_for_label }}">
+                    Ownership Type <span class="text-danger">*</span>
+                  </label>
+                  {{ form.business_ownership_type }}
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="{{ form.issuing_institution.id_for_label }}">
+                    Issuing Institution <span class="text-danger">*</span>
+                  </label>
+                  {{ form.issuing_institution }}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="{{ form.date_of_issuance.id_for_label }}">
+                    Date of Issuance <span class="text-danger">*</span>
+                  </label>
+                  {{ form.date_of_issuance }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section D: Administration -->
+          <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+              <span class="badge bg-primary me-2">SECTION D</span>
+              <strong class="text-dark">Administrative & Inspection Data</strong>
+            </div>
+            <div class="card-body p-4">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="{{ form.data_entered_by.id_for_label }}">
+                    Data Entered By
+                  </label>
+                  {{ form.data_entered_by }}
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold" for="{{ form.officer_signature.id_for_label }}">
+                    Officer Signature Name
+                  </label>
+                  {{ form.officer_signature }}
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold" for="{{ form.verification_date.id_for_label }}">
+                    Verification Date
+                  </label>
+                  {{ form.verification_date }}
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label fw-semibold" for="{{ form.remarks.id_for_label }}">
+                    Remarks / Inspection Notes
+                  </label>
+                  {{ form.remarks }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Workflow Actions: Save Draft vs Submit -->
+          <div class="d-flex justify-content-between align-items-center mb-5">
+            <a href="{% url 'traders:register_choice' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-1"></i> Back
+            </a>
+            <div class="d-flex gap-2">
+              <button type="submit" name="submit_action" value="draft" class="btn btn-outline-secondary px-4 py-2 fw-semibold">
+                <i class="bi bi-save me-1"></i> Save as Draft
+              </button>
+              <button type="submit" name="submit_action" value="submit" class="btn btn-primary px-5 py-2 fw-semibold shadow-sm">
+                <i class="bi bi-send-check me-1"></i> Submit for Verification
+              </button>
+            </div>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

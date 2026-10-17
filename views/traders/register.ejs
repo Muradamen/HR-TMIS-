@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head', { title: 'Register Trader - Select Classification' }) %>
+</head>
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+  <div class="app-wrapper">
+    <%- include('../partials/navbar') %>
+    <%- include('../partials/sidebar', { activeNav: 'register', activeSubNav: '' }) %>
+
+    <main class="app-main">
+      <div class="app-content-header py-3 bg-white border-bottom mb-4">
+        <div class="container-fluid">
+          <div class="row align-items-center">
+            <div class="col-sm-8">
+              <h3 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-person-plus-fill text-success me-2"></i>New Trader Registration
+              </h3>
+              <p class="text-muted small mb-0">Step 1: Select Trader Legal Classification</p>
+            </div>
+            <div class="col-sm-4 text-sm-end mt-2 mt-sm-0">
+              <a href="/traders/" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Registry
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-content">
+        <div class="container-fluid">
+          <div class="row justify-content-center">
+            <div class="col-lg-8">
+
+              <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-body p-4">
+                  <h4 class="fw-bold text-success mb-2">Select Registration Category</h4>
+                  <p class="text-muted mb-4">
+                    In according with Harari Region Trade & Industry regulatory guidelines, determine whether the enterprise is an officially registered legal entity with TIN, or an informal open-market operator undergoing assessment for formalization.
+                  </p>
+
+                  <form action="/traders/register/" method="POST" id="traderClassificationForm">
+                    <div class="row g-4 mb-4">
+                      <!-- Legal Option Card -->
+                      <div class="col-md-6">
+                        <label class="card h-100 border-2 rounded-3 p-3 cursor-pointer text-start w-100 position-relative shadow-sm hover-shadow" for="type_legal" style="cursor: pointer;">
+                          <div class="card-body p-2">
+                            <div class="d-flex align-items-center mb-3">
+                              <input class="form-check-input me-3 fs-5" type="radio" name="trader_type" id="type_legal" value="LEGAL" checked />
+                              <div>
+                                <span class="badge bg-primary px-2 py-1 mb-1">Formal Sector</span>
+                                <h5 class="fw-bold mb-0">Legal Trader</h5>
+                              </div>
+                            </div>
+                            <p class="text-muted small mb-3">
+                              For registered commercial businesses holding a Taxpayer Identification Number (TIN), Trade Registration Number, and formal license.
+                            </p>
+                            <ul class="small text-secondary ps-3 mb-0">
+                              <li>Commercial registration & TIN required</li>
+                              <li>Wholesale & Retail scales</li>
+                              <li>Ownership: PLC, Sole Proprietor, Co-op</li>
+                            </ul>
+                          </div>
+                        </label>
+                      </div>
+
+                      <!-- Informal Option Card -->
+                      <div class="col-md-6">
+                        <label class="card h-100 border-2 rounded-3 p-3 cursor-pointer text-start w-100 position-relative shadow-sm hover-shadow" for="type_informal" style="cursor: pointer;">
+                          <div class="card-body p-2">
+                            <div class="d-flex align-items-center mb-3">
+                              <input class="form-check-input me-3 fs-5" type="radio" name="trader_type" id="type_informal" value="INFORMAL" />
+                              <div>
+                                <span class="badge bg-warning text-dark px-2 py-1 mb-1">Informal Sector</span>
+                                <h5 class="fw-bold mb-0">Informal Trader</h5>
+                              </div>
+                            </div>
+                            <p class="text-muted small mb-3">
+                              For street vendors, open-market stalls (e.g. Gidir Magala), artisans, and petty retail operators undergoing formalization assessment.
+                            </p>
+                            <ul class="small text-secondary ps-3 mb-0">
+                              <li>Captures market location & estimated assets</li>
+                              <li>Document reasons for operating informally</li>
+                              <li>Formalization recommendation workflow</li>
+                            </ul>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                      <a href="/traders/" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i> Cancel
+                      </a>
+                      <button type="submit" class="btn btn-success px-4 py-2 fw-semibold">
+                        Continue to Registration Form <i class="bi bi-arrow-right ms-1"></i>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+  </div>
+  <%- include('../partials/scripts') %>
+</body>
+</html>

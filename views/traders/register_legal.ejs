@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head', { title: 'Register Legal Trader' }) %>
+</head>
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+  <div class="app-wrapper">
+    <%- include('../partials/navbar') %>
+    <%- include('../partials/sidebar', { activeNav: 'register', activeSubNav: 'register_legal' }) %>
+
+    <main class="app-main">
+      <div class="app-content-header py-3 bg-white border-bottom mb-4">
+        <div class="container-fluid">
+          <div class="row align-items-center">
+            <div class="col-sm-7">
+              <h3 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-briefcase-fill text-primary me-2"></i>Legal Trader Registration
+              </h3>
+              <p class="text-muted small mb-0">Record formal commercial entity, TIN, and trade license</p>
+            </div>
+            <div class="col-sm-5 text-sm-end mt-2 mt-sm-0">
+              <a href="/traders/register/" class="btn btn-outline-secondary me-1">
+                <i class="bi bi-arrow-left me-1"></i> Category Choice
+              </a>
+              <a href="/traders/" class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle me-1"></i> Cancel
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-content">
+        <div class="container-fluid">
+          <div class="row justify-content-center">
+            <div class="col-xl-10">
+
+              <% if (typeof error !== 'undefined' && error) { %>
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                  <i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %>
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              <% } %>
+
+              <form action="/traders/register/legal/" method="POST" class="needs-validation">
+                <!-- Section A: Enterprise & Tax Identification -->
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                  <div class="card-header bg-white py-3 border-bottom">
+                    <span class="badge bg-primary me-2">SECTION A</span>
+                    <strong class="text-dark">Enterprise & Tax Identification</strong>
+                  </div>
+                  <div class="card-body p-4">
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="id_trade_name">Trade Name / Company Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="id_trade_name" name="trade_name" placeholder="e.g. Jugol Heritage Spices & Coffee Trading" required />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="id_owner_full_name">Owner Full Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="id_owner_full_name" name="owner_full_name" placeholder="e.g. Ahmedin Ibrahim Mohammed" required />
+                      </div>
+
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold" for="id_tin">TIN (Taxpayer Identification Number) <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control font-monospace" id="id_tin" name="tin" placeholder="e.g. 0054891243" required />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold" for="id_trade_registration_number">Trade Registration Number <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control font-monospace" id="id_trade_registration_number" name="trade_registration_number" placeholder="e.g. HR-TR-2026-0842" required />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold" for="id_trade_license_number">Trade License Number <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control font-monospace" id="id_trade_license_number" name="trade_license_number" placeholder="e.g. HR-LIC-2026-11940" required />
+                      </div>
+
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold" for="id_gender">Gender <span class="text-danger">*</span></label>
+                        <select class="form-select" id="id_gender" name="gender" required>
+                          <option value="MALE">Male</option>
+                          <option value="FEMALE">Female</option>
+                          <option value="OTHER">Other</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold" for="id_age">Age <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="id_age" name="age" min="18" max="120" value="35" required />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold" for="id_region">Region</label>
+                        <input type="text" class="form-control" id="id_region" name="region" value="Harari Region" readonly />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section B: Business Location -->
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                  <div class="card-header bg-white py-3 border-bottom">
+                    <span class="badge bg-primary me-2">SECTION B</span>
+                    <strong class="text-dark">Commercial Location Details (Harari Region)</strong>
+                  </div>
+                  <div class="card-body p-4">
+                    <div class="row g-3">
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold" for="id_woreda">Woreda <span class="text-danger">*</span></label>
+                        <select class="form-select" id="id_woreda" name="woreda" required>
+                          <option value="">-- Select Woreda --</option>
+                          <% woredas.forEach(w => { %>
+                            <option value="<%= w.id %>"><%= w.name %> (<%= w.code %>)</option>
+                          <% }); %>
+                        </select>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold" for="id_kebele">Kebele <span class="text-danger">*</span></label>
+                        <select class="form-select" id="id_kebele" name="kebele" required>
+                          <option value="">-- Select Woreda First --</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold" for="id_house_number_plot_id">House Number / Plot ID</label>
+                        <input type="text" class="form-control" id="id_house_number_plot_id" name="house_number_plot_id" placeholder="e.g. H-421/Jugol or Commercial Plot 12" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section C: Trade Sector & Structure -->
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                  <div class="card-header bg-white py-3 border-bottom">
+                    <span class="badge bg-primary me-2">SECTION C</span>
+                    <strong class="text-dark">Business Classification & Scale</strong>
+                  </div>
+                  <div class="card-body p-4">
+                    <div class="row g-3">
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold" for="id_business_sector">Business Sector <span class="text-danger">*</span></label>
+                        <select class="form-select" id="id_business_sector" name="business_sector" required>
+                          <option value="GENERAL_TRADE">General Trade</option>
+                          <option value="RETAIL_WHOLESALE_GOODS">Retail/Wholesale Goods</option>
+                          <option value="AGRICULTURE_AGRO_PROCESSING">Agriculture/Agro-processing</option>
+                          <option value="MANUFACTURING_PRODUCTION">Manufacturing/Production</option>
+                          <option value="SERVICE_PROVIDER">Service Provider</option>
+                          <option value="OTHER">Other</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold" for="id_trade_scale">Trade Scale <span class="text-danger">*</span></label>
+                        <select class="form-select" id="id_trade_scale" name="trade_scale" required>
+                          <option value="RETAIL">Retail</option>
+                          <option value="WHOLESALE">Wholesale</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold" for="id_business_ownership_type">Ownership Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="id_business_ownership_type" name="business_ownership_type" required>
+                          <option value="SOLE_PROPRIETORSHIP">Sole Proprietorship</option>
+                          <option value="PLC">Private Limited Company (PLC)</option>
+                          <option value="PARTNERSHIP">Partnership</option>
+                          <option value="ASSOCIATION_COOPERATIVE">Association/Cooperative</option>
+                        </select>
+                      </div>
+
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="id_issuing_institution">Issuing Institution <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="id_issuing_institution" name="issuing_institution" value="Harari Trade & Industry Development Bureau" required />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="id_date_of_issuance">Date of Issuance <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="id_date_of_issuance" name="date_of_issuance" value="<%= new Date().toISOString().substring(0, 10) %>" required />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section D: Administration -->
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                  <div class="card-header bg-white py-3 border-bottom">
+                    <span class="badge bg-primary me-2">SECTION D</span>
+                    <strong class="text-dark">Administrative & Inspection Data</strong>
+                  </div>
+                  <div class="card-body p-4">
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="id_data_entered_by">Data Entered By</label>
+                        <input type="text" class="form-control" id="id_data_entered_by" name="data_entered_by" value="<%= user.first_name %> <%= user.last_name %>" />
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label fw-semibold" for="id_officer_signature">Officer Signature Name</label>
+                        <input type="text" class="form-control" id="id_officer_signature" name="officer_signature" placeholder="e.g. Officer K. Tadesse" />
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label fw-semibold" for="id_verification_date">Verification Date</label>
+                        <input type="date" class="form-control" id="id_verification_date" name="verification_date" />
+                      </div>
+
+                      <div class="col-12">
+                        <label class="form-label fw-semibold" for="id_remarks">Remarks / Inspection Notes</label>
+                        <textarea class="form-control" id="id_remarks" name="remarks" rows="2" placeholder="Additional notes or conditions"></textarea>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Workflow Actions: Save Draft vs Submit -->
+                <div class="d-flex justify-content-between align-items-center mb-5">
+                  <a href="/traders/register/" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back
+                  </a>
+                  <div class="d-flex gap-2">
+                    <button type="submit" name="submit_action" value="draft" class="btn btn-outline-secondary px-4 py-2 fw-semibold">
+                      <i class="bi bi-save me-1"></i> Save as Draft
+                    </button>
+                    <button type="submit" name="submit_action" value="submit" class="btn btn-primary px-5 py-2 fw-semibold shadow-sm">
+                      <i class="bi bi-send-check me-1"></i> Submit for Verification
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+  </div>
+  <%- include('../partials/scripts') %>
+</body>
+</html>

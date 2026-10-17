@@ -1,0 +1,77 @@
+<aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+  <div class="sidebar-brand">
+    <a href="/" class="brand-link d-flex align-items-center text-decoration-none">
+      <i class="bi bi-shield-check text-warning fs-4 me-2"></i>
+      <span class="brand-text fw-bold tracking-wide">HR-TMIS</span>
+    </a>
+  </div>
+
+  <div class="sidebar-wrapper">
+    <nav class="mt-2">
+      <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu" data-accordion="false">
+        <li class="nav-header text-uppercase small text-muted">Management System</li>
+        
+        <li class="nav-item">
+          <a href="/" class="nav-link <%= activeNav === 'dashboard' ? 'active' : '' %>">
+            <i class="nav-icon bi bi-speedometer2"></i>
+            <p>Dashboard</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="/traders/" class="nav-link <%= activeNav === 'traders' ? 'active' : '' %>">
+            <i class="nav-icon bi bi-people-fill"></i>
+            <p>Traders Registry</p>
+          </a>
+        </li>
+
+        <li class="nav-item <%= activeNav === 'register' ? 'menu-open' : '' %>">
+          <a href="/traders/register/" class="nav-link <%= activeNav === 'register' ? 'active' : '' %>">
+            <i class="nav-icon bi bi-person-plus-fill"></i>
+            <p>
+              Register Trader
+              <i class="nav-arrow bi bi-chevron-right"></i>
+            </p>
+          </a>
+          <ul class="nav nav-treeview ps-3">
+            <li class="nav-item">
+              <a href="/traders/register/legal/" class="nav-link <%= activeSubNav === 'register_legal' ? 'active' : '' %>">
+                <i class="nav-icon bi bi-patch-check text-primary"></i>
+                <p>Legal Trader Form</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="/traders/register/informal/" class="nav-link <%= activeSubNav === 'register_informal' ? 'active' : '' %>">
+                <i class="nav-icon bi bi-person-lines-fill text-warning"></i>
+                <p>Informal Trader Form</p>
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <li class="nav-header text-uppercase small text-muted mt-3">Governance & Analytics</li>
+
+        <li class="nav-item">
+          <a href="/locations/" class="nav-link <%= activeNav === 'locations' ? 'active' : '' %>">
+            <i class="nav-icon bi bi-geo-alt-fill"></i>
+            <p>Woredas & Kebeles</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="/reports/" class="nav-link <%= activeNav === 'reports' ? 'active' : '' %>">
+            <i class="nav-icon bi bi-bar-chart-line-fill"></i>
+            <p>Formalization Reports</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="/audit/" class="nav-link <%= activeNav === 'audit' ? 'active' : '' %>">
+            <i class="nav-icon bi bi-clock-history"></i>
+            <p>Audit Trail</p>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</aside>

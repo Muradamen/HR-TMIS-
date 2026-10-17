@@ -1,0 +1,54 @@
+<!-- OverlayScrollbars -->
+<script src="/static/adminlte/plugins/overlayscrollbars/browser/overlayscrollbars.browser.es5.min.js"></script>
+
+<!-- Bootstrap 5 Bundle -->
+<script src="/static/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<!-- AdminLTE 4 App -->
+<script src="/static/adminlte/js/adminlte.min.js"></script>
+
+<!-- Dynamic Kebele Selector & UI Helpers -->
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // Dynamic kebele loader
+    const woredaSelect = document.getElementById("id_woreda");
+    const kebeleSelect = document.getElementById("id_kebele");
+
+    if (woredaSelect && kebeleSelect) {
+      woredaSelect.addEventListener("change", async (e) => {
+        const woredaId = e.target.value;
+        kebeleSelect.innerHTML = '<option value="">Loading Kebeles...</option>';
+        if (!woredaId) {
+          kebeleSelect.innerHTML = '<option value="">-- Select Woreda First --</option>';
+          return;
+        }
+
+        try {
+          const res = await fetch(`/api/kebeles?woreda_id=${woredaId}`);
+          const kebeles = await res.json();
+          kebeleSelect.innerHTML = '<option value="">-- Select Kebele --</option>';
+          kebeles.forEach((k) => {
+            const opt = document.createElement("option");
+            opt.value = k.id;
+            opt.textContent = `${k.name} (${k.code})`;
+            kebeleSelect.appendChild(opt);
+          });
+        } catch (err) {
+          console.error("Error fetching kebeles:", err);
+          kebeleSelect.innerHTML = '<option value="">Error loading kebeles</option>';
+        }
+      });
+    }
+
+    // Auto-dismiss alert messages after 5 seconds
+    const alerts = document.querySelectorAll('.alert-dismissible');
+    alerts.forEach(alert => {
+      setTimeout(() => {
+        try {
+          const bsAlert = new bootstrap.Alert(alert);
+          bsAlert.close();
+        } catch (_) {}
+      }, 5000);
+    });
+  });
+</script>

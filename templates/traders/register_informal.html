@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Informal Trader{% endblock %}
+
+{% block content %}
+<div class="app-content-header py-3 bg-white border-bottom mb-4">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      <div class="col-sm-7">
+        <h3 class="mb-0 fw-bold text-dark">
+          <i class="bi bi-person-lines-fill text-warning me-2"></i>Informal Trader Enumeration & Assessment
+        </h3>
+        <p class="text-muted small mb-0">Survey informal operators, open-market vendors, and record formalization recommendations</p>
+      </div>
+      <div class="col-sm-5 text-sm-end mt-2 mt-sm-0">
+        <a href="{% url 'traders:register_choice' %}" class="btn btn-outline-secondary me-1">
+          <i class="bi bi-arrow-left me-1"></i> Category Choice
+        </a>
+        <a href="{% url 'traders:list' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-x-circle me-1"></i> Cancel
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-content">
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-xl-10">
+
+        {% if form.errors %}
+          <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Please correct the following errors:</strong>
+            <ul class="mb-0 mt-2">
+              {% for field in form %}
+                {% for error in field.errors %}
+                  <li>{{ field.label }}: {{ error }}</li>
+                {% endfor %}
+              {% endfor %}
+              {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endif %}
+
+        <form action="{% url 'traders:register_informal' %}" method="POST" class="needs-validation">
+          {% csrf_token %}
+
+          <!-- Section 1: Personal Identification -->
+          <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+              <span class="badge bg-warning text-dark me-2">SECTION 1</span>
+              <strong class="text-dark">Operator Personal Details & Identification</strong>
+            </div>
+            <div class="card-body p-4">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="{{ form.full_name.id_for_label }}">
+                    Full Name of Trader <span class="text-danger">*</span>
+                  </label>
+                  {{ form.full_name }}
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold" for="{{ form.gender.id_for_label }}">
+                    Gender <span class="text-danger">*</span>
+                  </label>
+                  {{ form.gender }}
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold" for="{{ form.age.id_for_label }}">
+                    Age <span class="text-danger">*</span>
+                  </label>
+                  {{ form.age }}
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="{{ form.national_id_resident_id.id_for_label }}">
+                    National ID / Resident ID No
+                  </label>
+                  {{ form.national_id_resident_id }}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="{{ form.phone_number.id_for_label }}">
+                    Phone Number <span class="text-danger">*</span>
+                  </label>
+                  {{ form.phone_number }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Operating Location -->
+          <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+              <span class="badge bg-warning text-dark me-2">SECTION 2</span>
+              <strong class="text-dark">Trading Location (Harari Region)</strong>
+            </div>
+            <div class="card-body p-4">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold" for="{{ form.region.id_for_label }}">
+                    Region
+                  </label>
+                  {{ form.region }}
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold" for="{{ form.woreda.id_for_label }}">
+                    Woreda <span class="text-danger">*</span>
+                  </label>
+                  {{ form.woreda }}
+                </div>
+                <div class="col-md-5">
+                  <label class="form-label fw-semibold" for="{{ form.kebele.id_for_label }}">
+                    Kebele <span class="text-danger">*</span>
+                  </label>
+                  {{ form.kebele }}
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label fw-semibold" for="{{ form.specific_location_market_area.id_for_label }}">
+                    Specific Location / Market Area <span class="text-danger">*</span>
+                  </label>
+                  {{ form.specific_location_market_area }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Activity & Capital -->
+          <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+              <span class="badge bg-warning text-dark me-2">SECTION 3</span>
+              <strong class="text-dark">Activity Nature & Economic Profile</strong>
+            </div>
+            <div class="card-body p-4">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="{{ form.nature_of_trade_activity.id_for_label }}">
+                    Nature of Trade Activity <span class="text-danger">*</span>
+                  </label>
+                  {{ form.nature_of_trade_activity }}
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="{{ form.estimated_capital_assets.id_for_label }}">
+                    Estimated Capital / Assets (ETB) <span class="text-danger">*</span>
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text">ETB</span>
+                    {{ form.estimated_capital_assets }}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label fw-semibold" for="{{ form.reason_for_operating_informally.id_for_label }}">
+                    Primary Reason for Operating Informally <span class="text-danger">*</span>
+                  </label>
+                  {{ form.reason_for_operating_informally }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Formalization Recommendation -->
+          <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+              <span class="badge bg-warning text-dark me-2">SECTION 4</span>
+              <strong class="text-dark">Enumerator Assessment & Formalization Recommendation</strong>
+            </div>
+            <div class="card-body p-4">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="{{ form.enumerator_data_collector_name.id_for_label }}">
+                    Enumerator / Data Collector Name
+                  </label>
+                  {{ form.enumerator_data_collector_name }}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold" for="{{ form.date_of_assessment.id_for_label }}">
+                    Date of Assessment <span class="text-danger">*</span>
+                  </label>
+                  {{ form.date_of_assessment }}
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label fw-semibold text-success" for="{{ form.formalization_status_recommendation.id_for_label }}">
+                    <i class="bi bi-star-fill text-warning me-1"></i>Formalization Recommendation <span class="text-danger">*</span>
+                  </label>
+                  {{ form.formalization_status_recommendation }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Workflow Actions: Save Draft vs Submit -->
+          <div class="d-flex justify-content-between align-items-center mb-5">
+            <a href="{% url 'traders:register_choice' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-1"></i> Back
+            </a>
+            <div class="d-flex gap-2">
+              <button type="submit" name="submit_action" value="draft" class="btn btn-outline-secondary px-4 py-2 fw-semibold">
+                <i class="bi bi-save me-1"></i> Save as Draft
+              </button>
+              <button type="submit" name="submit_action" value="submit" class="btn btn-warning px-5 py-2 fw-semibold shadow-sm text-dark">
+                <i class="bi bi-send-check me-1"></i> Submit for Verification
+              </button>
+            </div>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

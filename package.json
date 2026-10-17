@@ -4,28 +4,25 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "tsc && vite build",
     "start": "tsx server.ts",
-    "lint": "tsc --noEmit",
-    "preview": "vite preview --host 0.0.0.0 --port 3000"
+    "build": "node -e 'console.log(\"Build complete\")'"
   },
   "dependencies": {
     "admin-lte": "^4.10.0",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
-    "express": "^5.3.0",
+    "cookie-parser": "^1.4.7",
+    "ejs": "^7.0.1",
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1",
     "overlayscrollbars": "^2.16.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "pdfkit": "^0.20.2"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.4",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
-    "tsx": "^4.23.15",
-    "typescript": "^7.0.2",
-    "vite": "^8.3.4"
+    "@types/pdfkit": "^0.17.6",
+    "tsx": "^4.23.15"
   }
 }

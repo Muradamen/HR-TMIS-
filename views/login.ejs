@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: 'Login | HT-TMIS' }) %>
+  <style>
+    body.login-page {
+      background: radial-gradient(circle at 50% 30%, #e8f5e9 0%, #c8e6c9 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-box {
+      width: 100%;
+      max-width: 480px;
+      margin: 1.5rem auto;
+    }
+    .brand-logo-circle {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #1b5e20;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 2rem;
+      box-shadow: 0 4px 12px rgba(27, 94, 32, 0.25);
+    }
+  </style>
+</head>
+<body class="login-page">
+  <div class="login-box px-3">
+    <div class="text-center mb-3">
+      <div class="brand-logo-circle mb-2">
+        <i class="bi bi-shield-check text-warning"></i>
+      </div>
+      <h3 class="fw-bold text-success mb-0">HT-TMIS</h3>
+      <div class="text-muted small fw-medium">Harari People National Regional State</div>
+      <div class="text-secondary small">Trade & Industry Development Bureau</div>
+    </div>
+
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden bg-white">
+      <div class="card-header bg-harari py-3 text-center">
+        <h5 class="mb-0 text-white fw-bold">System Sign In</h5>
+        <small class="opacity-90 text-white">Trader Management Information System</small>
+      </div>
+
+      <div class="card-body p-4">
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="alert alert-danger py-2 px-3 small d-flex align-items-center mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+            <div><%= error %></div>
+          </div>
+        <% } %>
+
+        <% if (typeof flashMessage !== 'undefined' && flashMessage) { %>
+          <div class="alert alert-info py-2 px-3 small d-flex align-items-center mb-3" role="alert">
+            <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+            <div><%= flashMessage %></div>
+          </div>
+        <% } %>
+
+        <form action="/login" method="POST" class="mb-3">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary" for="username">Username</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
+              <input
+                type="text"
+                class="form-control"
+                id="username"
+                name="username"
+                placeholder="Enter username"
+                required
+                autofocus
+              />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary" for="password">Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-muted"><i class="bi bi-lock"></i></span>
+              <input
+                type="password"
+                class="form-control"
+                id="password"
+                name="password"
+                placeholder="Enter password"
+                required
+              />
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-success w-100 py-2 fw-bold shadow-sm">
+            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to System
+          </button>
+        </form>
+
+        <div class="border-top pt-3">
+          <div class="small fw-semibold text-muted text-uppercase mb-2 text-center" style="font-size: 0.75rem;">
+            Quick Login (Test Accounts by Role)
+          </div>
+
+          <div class="row g-2">
+            <div class="col-6">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary w-100 text-start py-2"
+                onclick="fillLogin('encoder', 'encoder12345')"
+              >
+                <div class="fw-bold text-truncate"><i class="bi bi-input-cursor-text me-1"></i> Data Encoder</div>
+                <div class="small text-muted" style="font-size: 0.7rem;">encoder / encoder12345</div>
+              </button>
+            </div>
+            <div class="col-6">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-success w-100 text-start py-2"
+                onclick="fillLogin('director', 'director12345')"
+              >
+                <div class="fw-bold text-truncate"><i class="bi bi-clipboard-check me-1"></i> Director Control</div>
+                <div class="small text-muted" style="font-size: 0.7rem;">director / director12345</div>
+              </button>
+            </div>
+            <div class="col-6">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary w-100 text-start py-2"
+                onclick="fillLogin('admin', 'admin12345')"
+              >
+                <div class="fw-bold text-truncate"><i class="bi bi-gear-fill me-1"></i> Administrator</div>
+                <div class="small text-muted" style="font-size: 0.7rem;">admin / admin12345</div>
+              </button>
+            </div>
+            <div class="col-6">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-warning w-100 text-start py-2"
+                onclick="fillLogin('leader', 'leader12345')"
+              >
+                <div class="fw-bold text-truncate"><i class="bi bi-award-fill me-1"></i> Agency Leader</div>
+                <div class="small text-muted" style="font-size: 0.7rem;">leader / leader12345</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer bg-light py-2 text-center small text-muted">
+        Harari Regional State &bull; Secured Enterprise Access
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function fillLogin(u, p) {
+      document.getElementById('username').value = u;
+      document.getElementById('password').value = p;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: 'Dashboard' }) %>
+</head>
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+  <div class="app-wrapper">
+    <%- include('partials/navbar') %>
+    <%- include('partials/sidebar', { activeNav: 'dashboard', activeSubNav: '' }) %>
+
+    <main class="app-main">
+      <div class="app-content-header py-3 bg-white border-bottom mb-4">
+        <div class="container-fluid">
+          <div class="row align-items-center">
+            <div class="col-sm-7">
+              <h3 class="mb-0 fw-bold text-dark">
+                <% if (user.role === 'DATA_ENCODER') { %>
+                  <i class="bi bi-input-cursor-text text-primary me-2"></i>Data Encoder Workspace
+                <% } else if (user.role === 'DIRECTOR_OF_TRADER_CONTROL') { %>
+                  <i class="bi bi-clipboard-check text-success me-2"></i>Director Verification & Control Dashboard
+                <% } else if (user.role === 'ADMINISTRATOR') { %>
+                  <i class="bi bi-shield-lock-fill text-dark me-2"></i>System Administration Dashboard
+                <% } else { %>
+                  <i class="bi bi-speedometer2 text-warning me-2"></i>Agency Leader Strategic Analytics
+                <% } %>
+              </h3>
+              <p class="text-muted small mb-0">Harari Region Trader Management Information System (HT-TMIS)</p>
+            </div>
+            <div class="col-sm-5 text-sm-end mt-2 mt-sm-0">
+              <% if (user.role === 'DATA_ENCODER' || user.role === 'ADMINISTRATOR') { %>
+                <a href="/traders/register/" class="btn btn-success me-2 shadow-sm">
+                  <i class="bi bi-plus-circle me-1"></i> New Registration
+                </a>
+              <% } %>
+              <a href="/traders/" class="btn btn-outline-secondary">
+                <i class="bi bi-table me-1"></i> Full Registry
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-content">
+        <div class="container-fluid">
+
+          <!-- Flash Notification -->
+          <% if (typeof flashMessage !== 'undefined' && flashMessage) { %>
+            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+              <i class="bi bi-check-circle-fill me-2"></i><%= flashMessage %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          <% } %>
+
+          <!-- Role-Specific Banner -->
+          <% if (user.role === 'DIRECTOR_OF_TRADER_CONTROL') { %>
+            <div class="alert alert-info border-info d-flex align-items-center mb-4 shadow-sm" role="alert">
+              <i class="bi bi-shield-check fs-2 text-info me-3"></i>
+              <div>
+                <strong class="d-block">Director Verification Authority & Self-Approval Prevention Active</strong>
+                <span class="small">
+                  You are authorized to review submitted traders, request corrections, approve licenses, or reject entries.
+                  <strong>Security Guard:</strong> If you registered a trader yourself, the system enforces independent review and disables self-approval.
+                </span>
+              </div>
+            </div>
+          <% } else if (user.role === 'DATA_ENCODER') { %>
+            <div class="alert alert-primary border-primary d-flex align-items-center mb-4 shadow-sm" role="alert">
+              <i class="bi bi-pencil-square fs-2 text-primary me-3"></i>
+              <div>
+                <strong class="d-block">Data Encoder Active Session</strong>
+                <span class="small">
+                  You can register new Legal and Informal traders, save incomplete entries as Drafts, and submit finalized applications to the Director for verification.
+                </span>
+              </div>
+            </div>
+          <% } %>
+
+          <!-- KPI Metric Cards -->
+          <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3">
+              <div class="card stat-card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body p-3">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <span class="text-muted small text-uppercase fw-semibold">Total Traders</span>
+                      <h2 class="mb-0 fw-bold mt-1"><%= stats.total %></h2>
+                    </div>
+                    <div class="rounded-3 bg-primary bg-opacity-10 p-3 text-primary">
+                      <i class="bi bi-people-fill fs-3"></i>
+                    </div>
+                  </div>
+                  <small class="text-muted"><%= stats.legal %> Legal &bull; <%= stats.informal %> Informal</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-6 col-lg-3">
+              <div class="card stat-card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body p-3">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <span class="text-muted small text-uppercase fw-semibold">Pending Review</span>
+                      <h2 class="mb-0 fw-bold mt-1 text-warning"><%= stats.submitted + stats.under_review %></h2>
+                    </div>
+                    <div class="rounded-3 bg-warning bg-opacity-10 p-3 text-warning">
+                      <i class="bi bi-hourglass-split fs-3"></i>
+                    </div>
+                  </div>
+                  <small class="text-secondary"><%= stats.submitted %> Submitted &bull; <%= stats.under_review %> Under Review</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-6 col-lg-3">
+              <div class="card stat-card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body p-3">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <span class="text-muted small text-uppercase fw-semibold">Approved</span>
+                      <h2 class="mb-0 fw-bold mt-1 text-success"><%= stats.approved %></h2>
+                    </div>
+                    <div class="rounded-3 bg-success bg-opacity-10 p-3 text-success">
+                      <i class="bi bi-patch-check-fill fs-3"></i>
+                    </div>
+                  </div>
+                  <small class="text-success"><i class="bi bi-check2 me-1"></i>Verified licenses</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-6 col-lg-3">
+              <div class="card stat-card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-body p-3">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <span class="text-muted small text-uppercase fw-semibold">Action Required</span>
+                      <h2 class="mb-0 fw-bold mt-1 text-danger"><%= stats.needs_correction + stats.draft %></h2>
+                    </div>
+                    <div class="rounded-3 bg-danger bg-opacity-10 p-3 text-danger">
+                      <i class="bi bi-exclamation-circle-fill fs-3"></i>
+                    </div>
+                  </div>
+                  <small class="text-danger"><%= stats.needs_correction %> Needs Correction &bull; <%= stats.draft %> Drafts</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Director Verification Queue / Action Queue -->
+          <% if (user.role === 'DIRECTOR_OF_TRADER_CONTROL') { %>
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+              <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="card-title fw-bold mb-0 text-success">
+                  <i class="bi bi-inbox-fill me-2"></i>Verification Queue (Awaiting Director Action)
+                </h5>
+                <span class="badge bg-warning text-dark px-3 py-1 fs-7">
+                  <%= pendingReviewTraders.length %> Pending Review
+                </span>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Trader Code</th>
+                        <th>Name / Trade Name</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Registered By</th>
+                        <th>Submission Date</th>
+                        <th class="text-end">Verification Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% if (pendingReviewTraders.length === 0) { %>
+                        <tr>
+                          <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="bi bi-check-all text-success fs-2 d-block mb-1"></i>
+                            All submitted trader records have been reviewed. No pending items.
+                          </td>
+                        </tr>
+                      <% } else { %>
+                        <% pendingReviewTraders.forEach(trader => { %>
+                          <tr>
+                            <td>
+                              <a href="/traders/<%= trader.trader_code %>/" class="fw-bold font-monospace text-decoration-none">
+                                <%= trader.trader_code %>
+                              </a>
+                            </td>
+                            <td>
+                              <div class="fw-semibold"><%= trader.displayName %></div>
+                              <small class="text-muted"><%= trader.woredaName %> &bull; <%= trader.kebeleName %></small>
+                            </td>
+                            <td>
+                              <% if (trader.trader_type === 'LEGAL') { %>
+                                <span class="badge badge-legal"><i class="bi bi-patch-check me-1"></i>Legal</span>
+                              <% } else { %>
+                                <span class="badge badge-informal"><i class="bi bi-person-badge me-1"></i>Informal</span>
+                              <% } %>
+                            </td>
+                            <td>
+                              <% if (trader.status === 'SUBMITTED') { %>
+                                <span class="badge bg-primary">Submitted</span>
+                              <% } else if (trader.status === 'UNDER_REVIEW') { %>
+                                <span class="badge bg-warning text-dark">Under Review</span>
+                              <% } else { %>
+                                <span class="badge bg-secondary"><%= trader.status %></span>
+                              <% } %>
+                            </td>
+                            <td>
+                              <% if (trader.registered_by === user.username) { %>
+                                <span class="badge bg-danger bg-opacity-10 text-danger fw-bold">
+                                  <i class="bi bi-person-fill me-1"></i>Self (<%= trader.registered_by %>)
+                                </span>
+                              <% } else { %>
+                                <span class="text-secondary"><%= trader.registered_by %></span>
+                              <% } %>
+                            </td>
+                            <td><small class="text-muted"><%= (trader.submitted_at || trader.created_at).substring(0, 10) %></small></td>
+                            <td class="text-end">
+                              <a href="/traders/<%= trader.trader_code %>/" class="btn btn-sm btn-primary">
+                                <i class="bi bi-clipboard-check me-1"></i> Review Record
+                              </a>
+                            </td>
+                          </tr>
+                        <% }); %>
+                      <% } %>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          <% } %>
+
+          <!-- Data Encoder Workspace: My Drafts & Submissions -->
+          <% if (user.role === 'DATA_ENCODER') { %>
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+              <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="card-title fw-bold mb-0 text-primary">
+                  <i class="bi bi-folder-fill me-2"></i>My Submissions & Working Records
+                </h5>
+                <div class="btn-group">
+                  <a href="/traders/register/legal/" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-plus-circle me-1"></i> Register Legal
+                  </a>
+                  <a href="/traders/register/informal/" class="btn btn-sm btn-outline-warning">
+                    <i class="bi bi-plus-circle me-1"></i> Register Informal
+                  </a>
+                </div>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Trader Code</th>
+                        <th>Entity Name</th>
+                        <th>Type</th>
+                        <th>Workflow Status</th>
+                        <th>Last Modified</th>
+                        <th class="text-end">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% const myRecords = recentTraders.filter(t => t.registered_by === user.username); %>
+                      <% if (myRecords.length === 0) { %>
+                        <tr>
+                          <td colspan="6" class="text-center py-4 text-muted">
+                            You have not created any records yet.
+                            <a href="/traders/register/">Start a registration</a>.
+                          </td>
+                        </tr>
+                      <% } else { %>
+                        <% myRecords.forEach(trader => { %>
+                          <tr>
+                            <td>
+                              <a href="/traders/<%= trader.trader_code %>/" class="fw-bold font-monospace text-decoration-none">
+                                <%= trader.trader_code %>
+                              </a>
+                            </td>
+                            <td>
+                              <div class="fw-semibold"><%= trader.displayName %></div>
+                              <small class="text-muted"><%= trader.woredaName %></small>
+                            </td>
+                            <td>
+                              <span class="badge <%= trader.trader_type === 'LEGAL' ? 'badge-legal' : 'badge-informal' %>">
+                                <%= trader.trader_type %>
+                              </span>
+                            </td>
+                            <td>
+                              <% if (trader.status === 'DRAFT') { %>
+                                <span class="badge bg-secondary">Draft</span>
+                              <% } else if (trader.status === 'SUBMITTED') { %>
+                                <span class="badge bg-primary">Submitted</span>
+                              <% } else if (trader.status === 'NEEDS_CORRECTION') { %>
+                                <span class="badge bg-danger">Needs Correction</span>
+                              <% } else if (trader.status === 'APPROVED') { %>
+                                <span class="badge badge-approved">Approved</span>
+                              <% } else { %>
+                                <span class="badge bg-secondary"><%= trader.status %></span>
+                              <% } %>
+                            </td>
+                            <td><small class="text-muted"><%= trader.updated_at.substring(0, 10) %></small></td>
+                            <td class="text-end">
+                              <a href="/traders/<%= trader.trader_code %>/" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View / Edit
+                              </a>
+                            </td>
+                          </tr>
+                        <% }); %>
+                      <% } %>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          <% } %>
+
+          <!-- General Overview: Recent Registrations & Regional Distribution -->
+          <div class="row g-4 mb-4">
+            <div class="col-lg-8">
+              <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                  <h5 class="card-title fw-bold mb-0">
+                    <i class="bi bi-clock-history text-primary me-2"></i>Recent System Activity
+                  </h5>
+                  <a href="/traders/" class="btn btn-sm btn-link text-decoration-none">View All Traders &rarr;</a>
+                </div>
+                <div class="card-body p-0">
+                  <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                      <thead class="table-light">
+                        <tr>
+                          <th>Code</th>
+                          <th>Name</th>
+                          <th>Type</th>
+                          <th>Status</th>
+                          <th>Woreda</th>
+                          <th class="text-end">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% recentTraders.slice(0, 6).forEach(trader => { %>
+                          <tr>
+                            <td>
+                              <a href="/traders/<%= trader.trader_code %>/" class="font-monospace fw-bold text-decoration-none">
+                                <%= trader.trader_code %>
+                              </a>
+                            </td>
+                            <td>
+                              <div class="fw-semibold text-truncate" style="max-width: 220px;"><%= trader.displayName %></div>
+                            </td>
+                            <td>
+                              <span class="badge <%= trader.trader_type === 'LEGAL' ? 'badge-legal' : 'badge-informal' %>">
+                                <%= trader.trader_type %>
+                              </span>
+                            </td>
+                            <td>
+                              <% if (trader.status === 'APPROVED') { %>
+                                <span class="badge badge-approved">Approved</span>
+                              <% } else if (trader.status === 'SUBMITTED') { %>
+                                <span class="badge bg-primary">Submitted</span>
+                              <% } else if (trader.status === 'UNDER_REVIEW') { %>
+                                <span class="badge bg-warning text-dark">Under Review</span>
+                              <% } else if (trader.status === 'NEEDS_CORRECTION') { %>
+                                <span class="badge bg-danger">Correction</span>
+                              <% } else { %>
+                                <span class="badge bg-secondary"><%= trader.status %></span>
+                              <% } %>
+                            </td>
+                            <td><%= trader.woredaName %></td>
+                            <td class="text-end">
+                              <a href="/traders/<%= trader.trader_code %>/" class="btn btn-sm btn-outline-primary py-0 px-2">
+                                Detail
+                              </a>
+                            </td>
+                          </tr>
+                        <% }); %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-4">
+              <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                  <h5 class="card-title fw-bold mb-0">
+                    <i class="bi bi-geo-alt-fill text-danger me-2"></i>Regional Woreda Breakdown
+                  </h5>
+                </div>
+                <div class="card-body p-3">
+                  <div class="list-group list-group-flush">
+                    <% woredaDistribution.forEach(w => { %>
+                      <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                        <div>
+                          <strong><%= w.name %></strong>
+                          <div class="small text-muted"><%= w.code %> &bull; <%= w.kebelesCount %> kebeles</div>
+                        </div>
+                        <span class="badge bg-light text-dark border px-2 py-1"><%= w.tradersCount %> traders</span>
+                      </div>
+                    <% }); %>
+                  </div>
+                  <div class="mt-3 text-center">
+                    <a href="/locations/" class="btn btn-sm btn-outline-secondary w-100">
+                      <i class="bi bi-map me-1"></i> View All Locations & Kebeles
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+
+    <%- include('partials/footer') %>
+  </div>
+  <%- include('partials/scripts') %>
+</body>
+</html>

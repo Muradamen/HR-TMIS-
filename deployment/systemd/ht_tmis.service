@@ -1,0 +1,19 @@
+[Unit]
+Description=HT-TMIS Gunicorn Daemon for Harari Region Trader Management
+After=network.target postgresql.service
+
+[Service]
+Type=notify
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/ht_tmis
+ExecStart=/var/www/ht_tmis/venv/bin/gunicorn --config /var/www/ht_tmis/deployment/gunicorn/gunicorn.conf.py config.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

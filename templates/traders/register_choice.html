@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Trader - Selection{% endblock %}
+
+{% block content %}
+<div class="app-content-header py-3 bg-white border-bottom mb-4">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      <div class="col-sm-8">
+        <h3 class="mb-0 fw-bold text-dark">
+          <i class="bi bi-person-plus-fill text-success me-2"></i>New Trader Registration
+        </h3>
+        <p class="text-muted small mb-0">Step 1: Select Trader Legal Classification</p>
+      </div>
+      <div class="col-sm-4 text-sm-end mt-2 mt-sm-0">
+        <a href="{% url 'traders:list' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i> Back to Registry
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-content">
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+          <div class="card-body p-4">
+            <h4 class="fw-bold text-success mb-2">Select Registration Category</h4>
+            <p class="text-muted mb-4">
+              Determine whether the enterprise is an officially registered legal entity with TIN, or an informal open-market operator undergoing formalization assessment.
+            </p>
+
+            <form action="{% url 'traders:register_choice' %}" method="POST">
+              {% csrf_token %}
+              <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                  <label class="card h-100 border-2 rounded-3 p-3 cursor-pointer text-start w-100 position-relative shadow-sm" for="type_legal" style="cursor: pointer;">
+                    <div class="card-body p-2">
+                      <div class="d-flex align-items-center mb-3">
+                        <input class="form-check-input me-3 fs-5" type="radio" name="trader_type" id="type_legal" value="LEGAL" checked />
+                        <div>
+                          <span class="badge bg-primary px-2 py-1 mb-1">Formal Sector</span>
+                          <h5 class="fw-bold mb-0">Legal Trader</h5>
+                        </div>
+                      </div>
+                      <p class="text-muted small mb-3">For registered commercial businesses holding a TIN, Trade Registration Number, and formal license.</p>
+                      <ul class="small text-secondary ps-3 mb-0">
+                        <li>Commercial registration & TIN required</li>
+                        <li>Wholesale & Retail scales</li>
+                        <li>PLC, Sole Proprietorship, Cooperative</li>
+                      </ul>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="card h-100 border-2 rounded-3 p-3 cursor-pointer text-start w-100 position-relative shadow-sm" for="type_informal" style="cursor: pointer;">
+                    <div class="card-body p-2">
+                      <div class="d-flex align-items-center mb-3">
+                        <input class="form-check-input me-3 fs-5" type="radio" name="trader_type" id="type_informal" value="INFORMAL" />
+                        <div>
+                          <span class="badge bg-warning text-dark px-2 py-1 mb-1">Informal Sector</span>
+                          <h5 class="fw-bold mb-0">Informal Trader</h5>
+                        </div>
+                      </div>
+                      <p class="text-muted small mb-3">For open-market stalls (e.g. Gidir Magala), street vendors, and artisans undergoing formalization.</p>
+                      <ul class="small text-secondary ps-3 mb-0">
+                        <li>Captures market location & assets</li>
+                        <li>Documents informality drivers</li>
+                        <li>Formalization recommendation workflow</li>
+                      </ul>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                <a href="{% url 'traders:list' %}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i> Cancel</a>
+                <button type="submit" class="btn btn-success px-4 py-2 fw-semibold">
+                  Continue to Form <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

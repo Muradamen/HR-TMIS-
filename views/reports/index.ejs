@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head', { title: 'Reports & Analytics' }) %>
+  <style>
+    .chart-card {
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .recharts-default-tooltip {
+      border-radius: 8px !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
+      border: 1px solid #e2e8f0 !important;
+      font-family: inherit !important;
+    }
+  </style>
+</head>
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+  <div class="app-wrapper">
+    <%- include('../partials/navbar') %>
+    <%- include('../partials/sidebar', { activeNav: 'reports', activeSubNav: '' }) %>
+
+    <main class="app-main">
+      <div class="app-content-header py-3 bg-white border-bottom mb-4 no-print">
+        <div class="container-fluid">
+          <div class="row align-items-center">
+            <div class="col-sm-6">
+              <h3 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-bar-chart-line-fill text-success me-2"></i>Formalization Reports & Analytics
+              </h3>
+              <p class="text-muted small mb-0">Aggregate statistics on formal and informal trade sectors in Harari Region</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+              <button onclick="window.print()" class="btn btn-outline-secondary">
+                <i class="bi bi-printer me-1"></i> Print Report
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-content">
+        <div class="container-fluid">
+          
+          <div class="row g-4 mb-4">
+            <!-- Formalization Recommendations Breakdown -->
+            <div class="col-md-6">
+              <div class="card border-0 shadow-sm rounded-3 h-100 chart-card">
+                <div class="card-header bg-white py-3 border-bottom">
+                  <h5 class="card-title fw-bold mb-0">
+                    <i class="bi bi-pie-chart text-warning me-2"></i>Informal Transition Pathways
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                      <div>
+                        <strong class="text-success"><i class="bi bi-check-circle me-2"></i>Ready for TIN & Micro-Enterprise</strong>
+                        <div class="small text-muted">Immediate registration candidates</div>
+                      </div>
+                      <span class="badge bg-success fs-6"><%= recommendations.readyForTin %></span>
+                    </div>
+
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                      <div>
+                        <strong class="text-info"><i class="bi bi-info-circle me-2"></i>Needs Awareness & Legal Support</strong>
+                        <div class="small text-muted">Requires training & regulatory sensitization</div>
+                      </div>
+                      <span class="badge bg-info fs-6"><%= recommendations.needsAwareness %></span>
+                    </div>
+
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                      <div>
+                        <strong class="text-secondary"><i class="bi bi-clock-history me-2"></i>Follow-Up Required</strong>
+                        <div class="small text-muted">Requires secondary verification or location fix</div>
+                      </div>
+                      <span class="badge bg-secondary fs-6"><%= recommendations.followUp %></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Capital Assets Distribution -->
+            <div class="col-md-6">
+              <div class="card border-0 shadow-sm rounded-3 h-100 chart-card">
+                <div class="card-header bg-white py-3 border-bottom">
+                  <h5 class="card-title fw-bold mb-0">
+                    <i class="bi bi-cash-stack text-success me-2"></i>Informal Capital Assets Summary
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="p-3 bg-light rounded-3 mb-3">
+                    <div class="text-muted small">Total Surveyed Informal Capital Assets</div>
+                    <div class="fs-3 fw-bold text-success font-monospace">
+                      ETB <%= totalInformalCapital.toLocaleString('en-US', { minimumFractionDigits: 2 }) %>
+                    </div>
+                  </div>
+                  <div class="p-3 bg-light rounded-3">
+                    <div class="text-muted small">Average Capital per Informal Operator</div>
+                    <div class="fs-4 fw-bold text-dark font-monospace">
+                      ETB <%= avgInformalCapital.toLocaleString('en-US', { minimumFractionDigits: 2 }) %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RECHARTS BAR CHART: Legal vs Informal Traders by Woreda -->
+          <div class="card border-0 shadow-sm rounded-3 mb-4 chart-card">
+            <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <div>
+                <h5 class="card-title fw-bold mb-0">
+                  <i class="bi bi-bar-chart-fill text-primary me-2"></i>Legal vs Informal Trader Distribution by Woreda
+                </h5>
+                <small class="text-muted">Interactive visual analysis powered by Recharts</small>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge badge-legal px-2 py-1"><i class="bi bi-square-fill me-1"></i>Legal Traders</span>
+                <span class="badge badge-informal px-2 py-1"><i class="bi bi-square-fill me-1"></i>Informal Traders</span>
+              </div>
+            </div>
+            <div class="card-body p-4">
+              <!-- React & Recharts Mount Target -->
+              <div id="recharts-woreda-distribution" style="min-height: 420px; width: 100%;">
+                <div class="d-flex justify-content-center align-items-center h-100 py-5 text-muted">
+                  <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                  <span>Rendering Recharts Visualizer...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Woreda Level Summary Table -->
+          <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+              <h5 class="card-title fw-bold mb-0">
+                <i class="bi bi-table text-primary me-2"></i>Woreda Trader Distribution & Status Matrix
+              </h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Woreda</th>
+                      <th>Code</th>
+                      <th>Kebeles</th>
+                      <th>Legal Traders</th>
+                      <th>Informal Traders</th>
+                      <th>Total Traders</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% woredaStats.forEach(ws => { %>
+                      <tr>
+                        <td class="fw-bold"><%= ws.name %></td>
+                        <td><span class="badge bg-light text-dark border"><%= ws.code %></span></td>
+                        <td><%= ws.kebelesCount %></td>
+                        <td><span class="badge bg-primary bg-opacity-10 text-primary fw-bold"><%= ws.legalCount %></span></td>
+                        <td><span class="badge bg-warning bg-opacity-10 text-warning fw-bold"><%= ws.informalCount %></span></td>
+                        <td class="fw-bold"><%= ws.totalCount %></td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+  </div>
+  <%- include('../partials/scripts') %>
+
+  <!-- Local React, ReactDOM, PropTypes, Recharts -->
+  <script src="/static/plugins/recharts/prop-types.min.js"></script>
+  <script src="/static/plugins/recharts/react.production.min.js"></script>
+  <script src="/static/plugins/recharts/react-dom.production.min.js"></script>
+  <script src="/static/plugins/recharts/Recharts.min.js"></script>
+
+  <script>
+    (function() {
+      const rawData = <%- JSON.stringify(woredaStats.map(ws => ({
+        name: ws.name,
+        code: ws.code,
+        legal: ws.legalCount,
+        informal: ws.informalCount,
+        total: ws.totalCount
+      }))) %>;
+
+      function initRecharts() {
+        const container = document.getElementById("recharts-woreda-distribution");
+        if (!container) return;
+
+        if (typeof React === "undefined" || typeof ReactDOM === "undefined" || typeof Recharts === "undefined") {
+          container.innerHTML = '<div class="alert alert-warning">Charts library could not be loaded. Please ensure JavaScript is enabled.</div>';
+          return;
+        }
+
+        const e = React.createElement;
+        const {
+          ResponsiveContainer,
+          BarChart,
+          Bar,
+          XAxis,
+          YAxis,
+          CartesianGrid,
+          Tooltip,
+          Legend
+        } = Recharts;
+
+        // Custom Recharts Tooltip
+        const CustomTooltip = function(props) {
+          if (!props.active || !props.payload || !props.payload.length) {
+            return null;
+          }
+          const data = props.payload[0].payload;
+          const legal = data.legal || 0;
+          const informal = data.informal || 0;
+          const total = data.total || 0;
+          const formalPercent = total > 0 ? Math.round((legal / total) * 100) : 0;
+
+          return e('div', {
+            style: {
+              backgroundColor: '#ffffff',
+              padding: '12px 16px',
+              border: '1px solid #cbd5e1',
+              borderRadius: '8px',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+              fontSize: '13px',
+              minWidth: '220px'
+            }
+          }, [
+            e('div', { key: 'title', style: { fontWeight: 'bold', fontSize: '14px', marginBottom: '8px', color: '#1e293b' } },
+              `${data.name} (${data.code})`
+            ),
+            e('div', { key: 'legal', style: { display: 'flex', justifyContent: 'space-between', color: '#0d6efd', marginBottom: '4px' } }, [
+              e('span', { key: 'l-label' }, 'Legal Traders:'),
+              e('strong', { key: 'l-val' }, legal)
+            ]),
+            e('div', { key: 'informal', style: { display: 'flex', justifyContent: 'space-between', color: '#fd7e14', marginBottom: '6px' } }, [
+              e('span', { key: 'i-label' }, 'Informal Traders:'),
+              e('strong', { key: 'i-val' }, informal)
+            ]),
+            e('div', { key: 'divider', style: { borderTop: '1px solid #e2e8f0', paddingTop: '6px', marginTop: '6px' } }),
+            e('div', { key: 'total', style: { display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#334155' } }, [
+              e('span', { key: 't-label' }, 'Total Registered:'),
+              e('span', { key: 't-val' }, total)
+            ]),
+            e('div', { key: 'rate', style: { display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b', marginTop: '2px' } }, [
+              e('span', { key: 'r-label' }, 'Formalization Rate:'),
+              e('span', { key: 'r-val' }, `${formalPercent}%`)
+            ])
+          ]);
+        };
+
+        function WoredaBarChart() {
+          return e('div', { style: { width: '100%', height: 400 } },
+            e(ResponsiveContainer, { width: '100%', height: '100%' },
+              e(BarChart, {
+                data: rawData,
+                margin: { top: 20, right: 30, left: 10, bottom: 60 }
+              }, [
+                e(CartesianGrid, { key: 'grid', strokeDasharray: '3 3', stroke: '#f1f5f9' }),
+                e(XAxis, {
+                  key: 'xaxis',
+                  dataKey: 'name',
+                  angle: -30,
+                  textAnchor: 'end',
+                  interval: 0,
+                  height: 70,
+                  tick: { fontSize: 12, fill: '#475569' }
+                }),
+                e(YAxis, {
+                  key: 'yaxis',
+                  allowDecimals: false,
+                  tick: { fontSize: 12, fill: '#475569' },
+                  label: {
+                    value: 'Trader Count',
+                    angle: -90,
+                    position: 'insideLeft',
+                    offset: 0,
+                    fontSize: 12,
+                    fill: '#64748b'
+                  }
+                }),
+                e(Tooltip, { key: 'tooltip', content: e(CustomTooltip) }),
+                e(Legend, {
+                  key: 'legend',
+                  verticalAlign: 'top',
+                  wrapperStyle: { paddingBottom: '12px' }
+                }),
+                e(Bar, {
+                  key: 'bar-legal',
+                  dataKey: 'legal',
+                  name: 'Legal Traders',
+                  fill: '#0d6efd',
+                  radius: [4, 4, 0, 0],
+                  maxBarSize: 45
+                }),
+                e(Bar, {
+                  key: 'bar-informal',
+                  dataKey: 'informal',
+                  name: 'Informal Traders',
+                  fill: '#fd7e14',
+                  radius: [4, 4, 0, 0],
+                  maxBarSize: 45
+                })
+              ])
+            )
+          );
+        }
+
+        const root = ReactDOM.createRoot ? ReactDOM.createRoot(container) : null;
+        if (root) {
+          root.render(e(WoredaBarChart));
+        } else if (ReactDOM.render) {
+          ReactDOM.render(e(WoredaBarChart), container);
+        }
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initRecharts);
+      } else {
+        initRecharts();
+      }
+    })();
+  </script>
+</body>
+</html>
